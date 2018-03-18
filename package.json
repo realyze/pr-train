@@ -6,12 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "git-pr-train": "./index.js"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "colors": "^1.2.1",
+    "commander": "^2.15.0",
     "figlet": "^1.2.0",
     "lodash.sortby": "^4.7.0",
+    "progress": "^2.0.0",
     "simple-git": "^1.92.0"
   }
 }
