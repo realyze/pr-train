@@ -5,6 +5,7 @@ const sortBy = require('lodash.sortby')
 const figlet = require('figlet');
 const program = require('commander');
 const ProgressBar = require('progress');
+const package = require('./package.json');
 
 require('colors');
 
@@ -16,13 +17,12 @@ async function mergeBranch(sg, from, to) {
 }
 
 function printTrain() {
-    console.log('==================================================')
     console.log(figlet.textSync('PR train', {
         font: 'Train',
         horizontalLayout: 'default',
         verticalLayout: 'default'
     }));
-    console.log('==================================================\n')
+    console.log("=".repeat(65) + '\n');
 }
 
 async function pushChanges(sg, branches, remote = 'origin') {
@@ -39,17 +39,26 @@ async function pushChanges(sg, branches, remote = 'origin') {
 }
 
 async function main() {
-    printTrain();
-
     program
-        .version('0.1.0')
+        .version(package.version)
         .option('-p, --push', 'Push changes')
-        .option('-r, --remote <remote>', 'set remote to push to. defaults to origin')
+        .option('-r, --remote <remote>', 'Set remote to push to. Defaults to "origin"')
         .parse(process.argv);
 
+    printTrain();
+
     const sg = simpleGit();
+    if (!await sg.checkIsRepo()) {
+        console.log('Not a git repo'.red);
+        process.exit(1);
+    }
     const branch = await sg.branchLocal();
-    const branchRoot = branch.current.match(/(.*)\/([0-9]+|combined)\/?.*$/)[1];
+    const branchRootMatch = branch.current.match(/(.*)\/([0-9]+|combined)\/?.*$/);
+    if (!branchRootMatch) {
+        console.log(`Current branch is not part of a PR train. Exiting.`.red);
+        process.exit(2);
+    }
+    const branchRoot = branchRootMatch[1];
     const subBranches = branch.all.filter(b => b.indexOf(branchRoot) === 0);
     const numericRegexp = /.*\/([0-9]+)\/?.*$/;
     const sortedBranches = sortBy(
