@@ -5,15 +5,16 @@ const sortBy = require('lodash.sortby')
 const figlet = require('figlet');
 const program = require('commander');
 const ProgressBar = require('progress');
+const emoji = require('node-emoji')
 const package = require('./package.json');
 
 require('colors');
 
 async function mergeBranch(sg, from, to) {
-    process.stdout.write(`merging ${from} into branch ${to}...`);
+    process.stdout.write(`merging ${from} into branch ${to}... `);
     await sg.checkout(to);
     await sg.merge([from]);
-    console.log('done'.green);
+    console.log(emoji.get('white_check_mark'));
 }
 
 function printTrain() {
@@ -35,7 +36,7 @@ async function pushChanges(sg, branches, remote = 'origin') {
     bar.tick(1);
     const promises = branches.map(b => sg.push(remote, b).then(() => bar.tick(1)));
     await Promise.all(promises);
-    console.log('All changes pushed'.green);
+    console.log('All changes pushed' + emoji.get('white_check_mark'));
 }
 
 async function main() {
