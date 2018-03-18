@@ -1,0 +1,17 @@
+{
+  "name": "git-pr-train",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.2.1",
+    "figlet": "^1.2.0",
+    "lodash.sortby": "^4.7.0",
+    "simple-git": "^1.92.0"
+  }
+}
