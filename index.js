@@ -10,8 +10,8 @@ require('colors');
 
 async function mergeBranch(sg, from, to) {
     process.stdout.write(`merging ${from} into branch ${to}...`);
-    await sg.checkout(from);
-    await sg.merge([to]);
+    await sg.checkout(to);
+    await sg.merge([from]);
     console.log('done'.green);
 }
 
