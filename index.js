@@ -27,7 +27,7 @@ function printTrain() {
 
 async function pushChanges(sg, branches, remote = 'origin') {
     console.log(`Pushing changes to remote ${remote}...`);
-    const bar = new ProgressBar(' uploading [:bar] :percent :elapsed', {
+    const bar = new ProgressBar('Uploading [:bar] :percent :elapsed', {
         width: 20,
         total: branches.length + 1,
         clear: true,
