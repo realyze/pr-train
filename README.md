@@ -1,12 +1,5 @@
-# pr-train
-            ___    ___              _                        _
-        | _ \  | _ \     o O O  | |_      _ _   __ _     (_)    _ _
-        |  _/  |   /    o       |  _|    | '_| / _` |    | |   | ' \
-        _|_|_   |_|_\   TS__[O]  _\__|   _|_|_  \__,_|   _|_|_  |_||_|
-        _| """ |_|"""""| {======|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
-        "`-0-0-'"`-0-0-'./o--000'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'
-
-Small helpful script to help with PR splitting
+# pr-train 🚃
+Small (but helpful) script to help with PR splitting
 
 ## How does this thing work?
 Say you want to split your work into multiple PRs. You create a chain of PRs (or a "PR train") looking like this:
