@@ -36,7 +36,7 @@ async function pushChanges(sg, branches, remote = 'origin') {
     bar.tick(1);
     const promises = branches.map(b => sg.push(remote, b).then(() => bar.tick(1)));
     await Promise.all(promises);
-    console.log('All changes pushed' + emoji.get('white_check_mark'));
+    console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
 async function main() {
@@ -53,14 +53,14 @@ async function main() {
         console.log('Not a git repo'.red);
         process.exit(1);
     }
-    const branch = await sg.branchLocal();
-    const branchRootMatch = branch.current.match(/(.*)\/([0-9]+|combined)\/?.*$/);
+    const branches = await sg.branchLocal();
+    const branchRootMatch = branches.current.match(/(.*)\/([0-9]+|combined)\/?.*$/);
     if (!branchRootMatch) {
         console.log(`Current branch is not part of a PR train. Exiting.`.red);
         process.exit(2);
     }
     const branchRoot = branchRootMatch[1];
-    const subBranches = branch.all.filter(b => b.indexOf(branchRoot) === 0);
+    const subBranches = branches.all.filter(b => b.indexOf(branchRoot) === 0);
     const numericRegexp = /.*\/([0-9]+)\/?.*$/;
     const sortedBranches = sortBy(
         subBranches.filter(b=>b.match(numericRegexp)),
@@ -75,7 +75,7 @@ async function main() {
     await Promise.all(mergePromises);
 
     const combinedBranch = `${branchRoot}/combined`;
-    if (!branch.all.find(b => b === combinedBranch)) {
+    if (!branches.all.find(b => b === combinedBranch)) {
         console.log(`creating combined branch (${combinedBranch})`)
         await sg.checkout(`-b${combinedBranch}`);
     }
@@ -86,6 +86,8 @@ async function main() {
     if (program.push) {
         pushChanges(sg, sortedBranches.concat(combinedBranch), program.remote);
     }
+
+    await sg.checkout(branches.current);
 }
 
 main();
