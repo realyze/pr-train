@@ -1,6 +1,8 @@
 # pr-train 🚃
 Small (but helpful) script to help with PR splitting
 
+[![asciicast](https://asciinema.org/a/wu9OXFr0zyrtv1P3DX5ntiaLs.png)](https://asciinema.org/a/wu9OXFr0zyrtv1P3DX5ntiaLs)
+
 ## How does this thing work?
 Say you want to split your work into multiple PRs. You create a chain of PRs (or a "PR train") looking like this:
  * fred/my-awesome-feature/1/frontend
