@@ -15,6 +15,9 @@
     "type": "git",
     "url": "https://github.com/realyze/pr-train"
   },
+  "engines" : {
+    "node" : ">=8.0.0"
+  },
   "dependencies": {
     "colors": "^1.2.1",
     "commander": "^2.15.0",
