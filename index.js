@@ -10,10 +10,15 @@ const package = require('./package.json');
 
 require('colors');
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
 async function mergeBranch(sg, from, to) {
     process.stdout.write(`merging ${from} into branch ${to}... `);
     await sg.checkout(to);
     await sg.merge([from]);
+    await sleep(250);
     console.log(emoji.get('white_check_mark'));
 }
 
