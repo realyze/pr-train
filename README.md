@@ -17,3 +17,11 @@ Now if you modify a branch, you will want all the subsequent branches to receive
 `pr-train` does just that for you. It takes all the subbranches, sorts them and merges each into their child branch (i.e., branch 1 into branch 2, branch 2 into branch 3 etc).
 
 It also makes sure there is a `fred/billing-refactor/combined` branch and all the other sub-branches are merged into it (just in case you need to run linting etc that you don't want to put into the last branch).
+
+## Installation
+Run `npm install -g git-pr-train`.
+
+## Usage
+Just run `git pr-train` in your working dir when you're on any branch that belongs to a PR train. You don't have to be on branch 1.
+
+`git pr-train -p` will also push your updated changes to remote `origin` (configurable via `-o` option).
