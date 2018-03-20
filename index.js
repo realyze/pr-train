@@ -10,6 +10,8 @@ const package = require('./package.json');
 
 require('colors');
 
+const MERGE_STEP_DELAY_MS = 500;
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -18,7 +20,7 @@ async function mergeBranch(sg, from, to) {
     process.stdout.write(`merging ${from} into branch ${to}... `);
     await sg.checkout(to);
     await sg.merge([from]);
-    await sleep(250);
+    await sleep(MERGE_STEP_DELAY_MS);
     console.log(emoji.get('white_check_mark'));
 }
 
