@@ -11,16 +11,21 @@ const package = require('./package.json');
 require('colors');
 
 const MERGE_STEP_DELAY_MS = 500;
+const MERGE_STEP_DELAY_WAIT_FOR_LOCK = 1500;
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function mergeBranch(sg, from, to) {
     process.stdout.write(`merging ${from} into branch ${to}... `);
     await sg.checkout(to);
-    await sg.merge([from]);
-    await sleep(MERGE_STEP_DELAY_MS);
+    try {
+        await sg.merge([from]);
+    } catch (e) {
+        if (!e.conflicts || e.conflicts.length === 0) {
+            await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
+            await sg.merge([from]);
+        }
+    }
     console.log(emoji.get('white_check_mark'));
 }
 
@@ -77,7 +82,8 @@ async function main() {
     console.log(sortedBranches.map(b => ` -> ${b.green}`).join('\n'), '\n');
     const mergePromises = [];
     for (let i=0; i<sortedBranches.length - 1; ++i) {
-        await mergeBranch(sg, sortedBranches[i], sortedBranches[i+1])
+        await mergeBranch(sg, sortedBranches[i], sortedBranches[i+1]);
+        await sleep(MERGE_STEP_DELAY_MS);
     }
     await Promise.all(mergePromises);
 
@@ -89,6 +95,7 @@ async function main() {
 
     const lastSubBranch = sortedBranches[sortedBranches.length - 1];
     await mergeBranch(sg, lastSubBranch, combinedBranch);
+    await sleep(MERGE_STEP_DELAY_MS);
 
     if (program.push) {
         pushChanges(sg, sortedBranches.concat(combinedBranch), program.remote);
@@ -97,4 +104,6 @@ async function main() {
     await sg.checkout(branches.current);
 }
 
-main();
+main().catch((e) => {
+    console.log(`${emoji.get('x')}  An error occured. Was there a conflict perhaps?`.red);
+});
