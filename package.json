@@ -1,6 +1,6 @@
 {
   "name": "git-pr-train",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,8 +12,8 @@
   "author": "",
   "license": "ISC",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/realyze/pr-train"
+    "type": "git",
+    "url": "https://github.com/realyze/pr-train"
   },
   "dependencies": {
     "colors": "^1.2.1",
