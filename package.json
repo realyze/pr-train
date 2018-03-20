@@ -11,6 +11,10 @@
   },
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/realyze/pr-train"
+  },
   "dependencies": {
     "colors": "^1.2.1",
     "commander": "^2.15.0",
