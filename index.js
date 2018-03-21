@@ -75,8 +75,8 @@ async function main() {
     const subBranches = branches.all.filter(b => b.indexOf(branchRoot) === 0);
     const numericRegexp = /.*\/([0-9]+)\/?.*$/;
     const sortedBranches = sortBy(
-        subBranches.filter(b=>b.match(numericRegexp)),
-        branch => branch.match()[1]);
+        subBranches.filter(b => b.match(numericRegexp)),
+        branch => parseInt(branch.match(numericRegexp)[1], 10));
 
     console.log(`I've found these partial branches:`);
     console.log(sortedBranches.map(b => ` -> ${b.green}`).join('\n'), '\n');
