@@ -116,7 +116,10 @@ async function main() {
         let branchesToPush = allBranches;
         if (!program.pushMerged) {
             branchesToPush = await getUnmergedBranches(sg, allBranches);
-            console.log(`Not pushing already merged branches: ${difference(allBranches, branchesToPush)}`)
+            const branchDiff = difference(allBranches, branchesToPush);
+            if (branchDiff.length > 0) {
+                console.log(`Not pushing already merged branches: ${branchDiff.join(', ')}`);
+            }
         }
         pushChanges(sg, branchesToPush, program.remote);
     }
