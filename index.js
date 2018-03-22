@@ -66,6 +66,7 @@ async function main() {
         .version(package.version)
         .option('-p, --push', 'Push changes')
         .option('--push-merged', 'Push even branches merged into master')
+        .option('-C, --no-combined', 'Do not create combined branch (or ignore it if already created)')
         .option('-r, --remote <remote>', 'Set remote to push to. Defaults to "origin"')
         .parse(process.argv);
 
@@ -98,18 +99,20 @@ async function main() {
     }
     await Promise.all(mergePromises);
 
-    const combinedBranch = `${branchRoot}/combined`;
-    if (!branches.all.find(b => b === combinedBranch)) {
-        console.log(`creating combined branch (${combinedBranch})`)
-        await sg.checkout(`-b${combinedBranch}`);
+    let combinedBranch;
+    if (program.combined) {
+        combinedBranch = `${branchRoot}/combined`;
+        if (!program.noCombined && !branches.all.find(b => b === combinedBranch)) {
+            console.log(`creating combined branch (${combinedBranch})`)
+            await sg.checkout(`-b${combinedBranch}`);
+        }
+        const lastSubBranch = sortedBranches[sortedBranches.length - 1];
+        await mergeBranch(sg, lastSubBranch, combinedBranch);
+        await sleep(MERGE_STEP_DELAY_MS);
     }
 
-    const lastSubBranch = sortedBranches[sortedBranches.length - 1];
-    await mergeBranch(sg, lastSubBranch, combinedBranch);
-    await sleep(MERGE_STEP_DELAY_MS);
-
     if (program.push || program.pushMerged) {
-        const allBranches = sortedBranches.concat(combinedBranch);
+        const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
         let branchesToPush = allBranches;
         if (!program.pushMerged) {
             branchesToPush = await getUnmergedBranches(sg, allBranches);
