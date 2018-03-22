@@ -2,6 +2,7 @@
 
 const simpleGit = require('simple-git/promise');
 const sortBy = require('lodash.sortby')
+const difference = require('lodash.difference')
 const figlet = require('figlet');
 const program = require('commander');
 const ProgressBar = require('progress');
@@ -40,7 +41,7 @@ function printTrain() {
 
 async function pushChanges(sg, branches, remote = 'origin') {
     console.log(`Pushing changes to remote ${remote}...`);
-    const bar = new ProgressBar('Uploading [:bar] :percent :elapsed', {
+    const bar = new ProgressBar('Pushing [:bar] :percent :elapsed', {
         width: 20,
         total: branches.length + 1,
         clear: true,
@@ -51,10 +52,20 @@ async function pushChanges(sg, branches, remote = 'origin') {
     console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
+async function getUnmergedBranches(sg, branches) {
+    const mergedBranchesOutput = await sg.raw(['branch', '--merged', 'master']);
+    const mergedBranches = mergedBranchesOutput
+        .split('\n')
+        .map(b => b.trim())
+        .filter(Boolean);
+    return difference(branches, mergedBranches);
+}
+
 async function main() {
     program
         .version(package.version)
         .option('-p, --push', 'Push changes')
+        .option('--push-merged', 'Push even branches merged into master')
         .option('-r, --remote <remote>', 'Set remote to push to. Defaults to "origin"')
         .parse(process.argv);
 
@@ -97,8 +108,14 @@ async function main() {
     await mergeBranch(sg, lastSubBranch, combinedBranch);
     await sleep(MERGE_STEP_DELAY_MS);
 
-    if (program.push) {
-        pushChanges(sg, sortedBranches.concat(combinedBranch), program.remote);
+    if (program.push || program.pushMerged) {
+        const allBranches = sortedBranches.concat(combinedBranch);
+        let branchesToPush = allBranches;
+        if (!program.pushMerged) {
+            branchesToPush = await getUnmergedBranches(sg, allBranches);
+            console.log(`Not pushing already merged branches: ${difference(allBranches, branchesToPush)}`)
+        }
+        pushChanges(sg, branchesToPush, program.remote);
     }
 
     await sg.checkout(branches.current);
