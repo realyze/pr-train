@@ -3,6 +3,12 @@ Small (but helpful) script to help with PR splitting
 
 [![asciicast](https://asciinema.org/a/wu9OXFr0zyrtv1P3DX5ntiaLs.png)](https://asciinema.org/a/wu9OXFr0zyrtv1P3DX5ntiaLs)
 
+## What does this do?
+Simply put, if you have a chain of PRs and you modify one of them,
+`git pr-train` ensure all your branches in the chain get updated
+without the risk of losing your zen (which happens if you try to do
+it manually).
+
 ## How does this thing work?
 Note: We expect your branches to follow this simple naming scheme: `your-name/brief-feature-description/[0-9]+(/optional-part)`, e.g. `fred/billing-refactor/1/frontend-changes`.
 
