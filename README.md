@@ -5,9 +5,9 @@ Small (but helpful) script to help with PR splitting
 
 ## What does this do?
 Simply put, if you have a chain of PRs and you modify one of them,
-`git pr-train` ensure all your branches in the chain get updated
-without the risk of losing your zen (which happens if you try to do
-it manually).
+`git pr-train` ensures all your branches in the chain get updated
+without the risk of you losing your zen (which happens if you try
+to do this onerous process manually).
 
 ## How does this thing work?
 Note: We expect your branches to follow this simple naming scheme: `your-name/brief-feature-description/[0-9]+(/optional-part)`, e.g. `fred/billing-refactor/1/frontend-changes`.
