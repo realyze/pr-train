@@ -16,15 +16,19 @@ const MERGE_STEP_DELAY_WAIT_FOR_LOCK = 1500;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function mergeBranch(sg, from, to) {
-    process.stdout.write(`merging ${from} into branch ${to}... `);
+async function combineBranches(sg, rebase, from, to) {
+    if (program.rebase) {
+        process.stdout.write(`rebasing ${from} onto branch ${to}... `);
+    } else {
+        process.stdout.write(`merging ${from} into branch ${to}... `);
+    }
     await sg.checkout(to);
     try {
-        await sg.merge([from]);
+        await rebase ? sg.rebase ([from]) : sg.merge([from]);
     } catch (e) {
         if (!e.conflicts || e.conflicts.length === 0) {
             await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
-            await sg.merge([from]);
+            await rebase ? sg.rebase ([from]) : sg.merge([from]);
         }
     }
     console.log(emoji.get('white_check_mark'));
@@ -65,9 +69,10 @@ async function main() {
     program
         .version(package.version)
         .option('-p, --push', 'Push changes')
+        .option('-r, --rebase', 'Rebase branches rather than merging them')
         .option('--push-merged', 'Push even branches merged into master')
         .option('-C, --no-combined', 'Do not create combined branch (or ignore it if already created)')
-        .option('-r, --remote <remote>', 'Set remote to push to. Defaults to "origin"')
+        .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
         .parse(process.argv);
 
     printTrain();
@@ -94,7 +99,7 @@ async function main() {
     console.log(sortedBranches.map(b => ` -> ${b.green}`).join('\n'), '\n');
     const mergePromises = [];
     for (let i=0; i<sortedBranches.length - 1; ++i) {
-        await mergeBranch(sg, sortedBranches[i], sortedBranches[i+1]);
+        await combineBranches(sg, program.rebase, sortedBranches[i], sortedBranches[i+1]);
         await sleep(MERGE_STEP_DELAY_MS);
     }
     await Promise.all(mergePromises);
@@ -107,7 +112,7 @@ async function main() {
             await sg.checkout(`-b${combinedBranch}`);
         }
         const lastSubBranch = sortedBranches[sortedBranches.length - 1];
-        await mergeBranch(sg, lastSubBranch, combinedBranch);
+        await combineBranches(sg, program.rebase, lastSubBranch, combinedBranch);
         await sleep(MERGE_STEP_DELAY_MS);
     }
 

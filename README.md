@@ -30,4 +30,4 @@ Run `npm install -g git-pr-train`.
 ## Usage
 Just run `git pr-train` in your working dir when you're on any branch that belongs to a PR train. You don't have to be on branch 1.
 
-`git pr-train -p` will also push your updated changes to remote `origin` (configurable via `-o` option).
+`git pr-train -p` will also push your updated changes to remote `origin` (configurable via `--remote` option).
