@@ -1,6 +1,6 @@
 {
   "name": "git-pr-train",
-  "version": "0.9.16",
+  "version": "0.10.0",
   "description": "",
   "main": "index.js",
   "scripts": {
