@@ -18,7 +18,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function combineBranches(sg, rebase, from, to) {
     if (program.rebase) {
-        process.stdout.write(`rebasing ${from} onto branch ${to}... `);
+        process.stdout.write(`rebasing ${to} onto branch ${from}... `);
     } else {
         process.stdout.write(`merging ${from} into branch ${to}... `);
     }
