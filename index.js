@@ -88,10 +88,19 @@ async function main() {
         .version(package.version)
         .option('-p, --push', 'Push changes')
         .option('-r, --rebase', 'Rebase branches rather than merging them')
-        .option('--push-merged', 'Push even branches merged into master')
+        .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
         .option('-C, --no-combined', 'Do not create combined branch (or ignore it if already created)')
         .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-        .parse(process.argv);
+
+    program.on('--help', () => {
+        console.log('');
+        console.log('  Switching branches:');
+        console.log('');
+        console.log('    $ `git pr-train <index>` will switch to branch with index 2');
+        console.log('');
+    });
+
+    program.parse(process.argv);
 
     const sg = simpleGit();
     if (!await sg.checkIsRepo()) {
