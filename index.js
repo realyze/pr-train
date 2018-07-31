@@ -65,6 +65,24 @@ async function getUnmergedBranches(sg, branches) {
     return difference(branches, mergedBranches);
 }
 
+function getBranchRoot(branches) {
+    const branchRootMatch = branches.current.match(/(.*)\/([0-9]+|combined)\/?.*$/);
+    if (!branchRootMatch) {
+        console.log(`Current branch is not part of a PR train. Exiting.`.red);
+        process.exit(2);
+    }
+    return branchRootMatch[1];
+}
+
+function getSortedTrainBranches(branches, branchRoot) {
+    const subBranches = branches.all.filter(b => b.indexOf(branchRoot) === 0);
+    const numericRegexp = /.*\/([0-9]+)\/?.*$/;
+    const sortedBranches = sortBy(
+        subBranches.filter(b => b.match(numericRegexp)),
+        branch => parseInt(branch.match(numericRegexp)[1], 10));
+    return sortedBranches;
+}
+
 async function main() {
     program
         .version(package.version)
@@ -75,25 +93,29 @@ async function main() {
         .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
         .parse(process.argv);
 
-    printTrain();
-
     const sg = simpleGit();
     if (!await sg.checkIsRepo()) {
         console.log('Not a git repo'.red);
         process.exit(1);
     }
+
+    printTrain();
+
     const branches = await sg.branchLocal();
-    const branchRootMatch = branches.current.match(/(.*)\/([0-9]+|combined)\/?.*$/);
-    if (!branchRootMatch) {
-        console.log(`Current branch is not part of a PR train. Exiting.`.red);
-        process.exit(2);
+    const branchRoot = getBranchRoot(branches);
+    const sortedBranches = getSortedTrainBranches(branches, branchRoot);
+
+    const switchToBranchIndex = program.args[0];
+    if (switchToBranchIndex) {
+        const targetBranch = sortedBranches.find(b => b.indexOf(`${branchRoot}/${switchToBranchIndex}`) === 0)
+        if (!targetBranch) {
+            console.log(`Could not find branch with index ${switchToBranchIndex}`.red);
+            process.exit(3);
+        }
+        await sg.checkout(targetBranch);
+        console.log(`Switched to branch ${targetBranch}`);
+        return;
     }
-    const branchRoot = branchRootMatch[1];
-    const subBranches = branches.all.filter(b => b.indexOf(branchRoot) === 0);
-    const numericRegexp = /.*\/([0-9]+)\/?.*$/;
-    const sortedBranches = sortBy(
-        subBranches.filter(b => b.match(numericRegexp)),
-        branch => parseInt(branch.match(numericRegexp)[1], 10));
 
     console.log(`I've found these partial branches:`);
     console.log(sortedBranches.map(b => ` -> ${b.green}`).join('\n'), '\n');
@@ -133,5 +155,5 @@ async function main() {
 }
 
 main().catch((e) => {
-    console.log(`${emoji.get('x')}  An error occured. Was there a conflict perhaps?`.red);
+    console.log(`${emoji.get('x')}  An error occured. Was there a conflict perhaps?`.red, e);
 });
