@@ -31,3 +31,8 @@ Run `npm install -g git-pr-train`.
 Just run `git pr-train` in your working dir when you're on any branch that belongs to a PR train. You don't have to be on branch 1. Use `-r/--rebase` option if you'd like to rebase branches rather than merge.
 
 `git pr-train -p` will also push your updated changes to remote `origin` (configurable via `--remote` option).
+
+### Automagically creating GitHub PRs
+**Pre-requisite**: Create a `${HOME}/.pr-train` file with a single line which is your GH access token (you can create one [here](https://github.com/settings/tokens)).
+
+Pass `--create-prs` to create GH PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be promted before the PRs are created. Please note that re-running with `--create-prs` will update the existing PRs. So you might not want to do that.
