@@ -25,7 +25,9 @@
     "lodash.difference": "^4.5.0",
     "lodash.sortby": "^4.7.0",
     "node-emoji": "^1.8.1",
+    "octonode": "^0.9.3",
     "progress": "^2.0.0",
+    "promptly": "^3.0.3",
     "simple-git": "^1.92.0"
   }
 }
