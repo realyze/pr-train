@@ -13,7 +13,7 @@ const octo = require('octonode');
 const fs = require('fs');
 const promptly = require('promptly');
 
-require('colors');
+const colors = require('colors');
 
 const MERGE_STEP_DELAY_MS = 500;
 const MERGE_STEP_DELAY_WAIT_FOR_LOCK = 1500;
@@ -89,6 +89,32 @@ function getSortedTrainBranches(branches, branchRoot) {
     return sortedBranches;
 }
 
+// Taken from Welcome to Nightvale.
+const quotes = [
+    `People are beautiful when they do beautiful things.`,
+    `In terms of tacos, she was doing fine.`,
+    `You believe in mountains, right? Not everyone does.`,
+    `It is a terrible, terrible beauty that I do not understand.`,
+    `A million dollars isn’t cool. You know what’s cool? A basilisk.`,
+    `Dress your dog for the job you want, not the job you have.`,
+    `Dance like the government is watching.`,
+    `There is no proof you exist. Only evidence.`,
+    `Welcome to 2018. The year we finally do it. The year we eat the sun.`,
+    `Bite your tongue. Fun, right?`,
+    `I like my coffee like I like my nights: dark, endless, and impossible to sleep through.`,
+    `There is a thin semantic line separating weird and beautiful, and that line is covered in jellyfish.`,
+    `If it looks like a duck, and it quacks like a duck, you should not be so quick to jump to conclusions.`,
+    `Confused? At a loss for what to do? Wow, sounds like you're human. Good Luck.`,
+];
+
+function printQuote() {
+    const quote = quotes[Math.floor(Math.random() * quotes.length)];
+    console.log();
+    console.log(`Quote for the day: "${colors.gray(colors.italic(quote))}"`);
+}
+
+process.on('exit', () => printQuote());
+
 async function ensurePrsExist(sg, sortedBranches, combinedBranch, remote = DEFAULT_REMOTE) {
     const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
     const octoClient = octo.client(readGHKey());
@@ -108,8 +134,8 @@ async function ensurePrsExist(sg, sortedBranches, combinedBranch, remote = DEFAU
     }, Promise.resolve());
 
     console.log()
-    if (!await promptly.confirm('Shall we do this? [y/n] '.bold)) {
-        console.log('OK, no worries. Bye now.', emoji.get('wave'));
+    if (!await promptly.confirm(colors.bold('Shall we do this? [y/n] '))) {
+        console.log('No worries. Bye now.', emoji.get('wave'));
         process.exit(0);
     }
 
