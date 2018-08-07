@@ -90,8 +90,6 @@ function getSortedTrainBranches(branches, branchRoot) {
     return sortedBranches;
 }
 
-process.on('exit', () => printQuote());
-
 async function ensurePrsExist(sg, sortedBranches, combinedBranch, remote = DEFAULT_REMOTE) {
     const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
     const octoClient = octo.client(readGHKey());
@@ -198,6 +196,7 @@ async function main() {
         .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
         .option('-C, --no-combined', 'Do not create combined branch (or ignore it if already created)')
         .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
+        .option('--no-quote', 'Do not print wise quote on exit')
         .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
 
     program.on('--help', () => {
@@ -206,9 +205,17 @@ async function main() {
         console.log('');
         console.log('    $ `git pr-train <index>` will switch to branch with index 2');
         console.log('');
+        console.log('  Creating GitHub PRs:');
+        console.log('');
+        console.log('    $ `git pr-train -p --create-prs` will create GH PRs for all branches in your train (with a "table of contents")');
+        console.log(colors.italic(`    Please note you'll need to create a \`\${HOME}/.pr-train\` file with your GitHub access token first.`));
+        console.log('');
     });
 
     program.parse(process.argv);
+
+    // Bind listener here to prevent quoting when invoked with `-h`.
+    process.on('exit', () => program.quote && printQuote());
 
     if (program.createPrs && !readGHKey()) {
         console.log(`"$HOME/.pr-train" not found. Please make sure file exists and contains your GitHub API key`.red);

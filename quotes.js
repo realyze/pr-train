@@ -29,6 +29,7 @@ module.exports = {
     printQuote() {
         const quote = quotes[Math.floor(Math.random() * quotes.length)];
         console.log();
-        console.log(`Quote for the day: "${colors.gray(colors.italic(quote))}"`);
+        console.log(`"${colors.gray(colors.italic(quote))}"`);
+        console.log();
     },
 };
