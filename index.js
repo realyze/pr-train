@@ -190,11 +190,6 @@ async function ensurePrsExist(sg, sortedBranches, combinedBranch, remote = DEFAU
         return memo;
     }, Promise.resolve({}));
 
-    console.log('');
-    console.log(`Waiting for GitHub database gnomes... ${emoji.get('pick')}`)
-    console.log('');
-    await sleep(1000);
-
     // Now that we have all the PRs, let's update them with the "navigation" section.
     // Note: We're running this serially to have nicer logs.
     await allBranches.reduce(async (memo, branch) => {
