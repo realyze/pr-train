@@ -237,7 +237,7 @@ async function main() {
     program.parse(process.argv);
 
     // Bind listener here to prevent quoting when invoked with `-h`.
-    process.on('exit', () => program.quote && printQuote());
+    process.on('exit', (code) => (program.quote && code === 0) && printQuote());
 
     if (program.createPrs && !readGHKey()) {
         console.log(`"$HOME/.pr-train" not found. Please make sure file exists and contains your GitHub API key`.red);
