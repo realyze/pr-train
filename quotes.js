@@ -29,7 +29,7 @@ module.exports = {
     printQuote() {
         const quote = quotes[Math.floor(Math.random() * quotes.length)];
         console.log();
-        console.log(`"${colors.gray(colors.italic(quote))}"`);
+        console.log(`Today's proverb: "${colors.gray(colors.italic(quote))}"`);
         console.log();
     },
 };
