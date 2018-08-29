@@ -16,8 +16,8 @@ const { printQuote } = require('./quotes');
 
 const colors = require('colors');
 
-const MERGE_STEP_DELAY_MS = 500;
-const MERGE_STEP_DELAY_WAIT_FOR_LOCK = 1500;
+const MERGE_STEP_DELAY_MS = 750;
+const MERGE_STEP_DELAY_WAIT_FOR_LOCK = 2500;
 
 const DEFAULT_REMOTE = 'origin';
 
@@ -99,10 +99,9 @@ async function constructPrMsg(sg, branch) {
 function constructTrainNavigation(branchToPrDict, currentBranch) {
     let contents = '#### PR chain:\n'
     return Object.keys(branchToPrDict).reduce((output, branch) => {
-        output += `#${branchToPrDict[branch].pr} (${branchToPrDict[branch].title.trim()})`
-        if (branch === currentBranch) {
-            output += ' <- you are here'
-        }
+        const maybeHandRight = branch === currentBranch ? '👉 ' : '';
+        const maybeHandLeft = branch === currentBranch ? ' 👈 **YOU ARE HERE**' : '';
+        output += `${maybeHandRight}#${branchToPrDict[branch].pr} (${branchToPrDict[branch].title.trim()})${maybeHandLeft}`
         return output + '\n'
     }, contents);
 }
