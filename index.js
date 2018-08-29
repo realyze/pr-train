@@ -50,7 +50,7 @@ function printTrain() {
     console.log("=".repeat(65) + '\n');
 }
 
-async function pushChanges(sg, branches, remote = DEFAULT_REMOTE) {
+async function pushChanges(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
     console.log(`Pushing changes to remote ${remote}...`);
     const bar = new ProgressBar('Pushing [:bar] :percent :elapsed', {
         width: 20,
@@ -58,7 +58,7 @@ async function pushChanges(sg, branches, remote = DEFAULT_REMOTE) {
         clear: true,
     });
     bar.tick(1);
-    const promises = branches.map(b => sg.push(remote, b).then(() => bar.tick(1)));
+    const promises = branches.map(b => sg.push(remote, b, { '--force': forcePush }).then(() => bar.tick(1)));
     await Promise.all(promises);
     console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
@@ -209,6 +209,7 @@ async function main() {
         .version(package.version)
         .option('-p, --push', 'Push changes')
         .option('-r, --rebase', 'Rebase branches rather than merging them')
+        .option('-f, --force', 'Force push to remote')
         .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
         .option('-C, --no-combined', 'Do not create combined branch (or ignore it if already created)')
         .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
@@ -293,7 +294,7 @@ async function main() {
                 console.log(`Not pushing already merged branches: ${branchDiff.join(', ')}`);
             }
         }
-        pushChanges(sg, branchesToPush, program.remote);
+        pushChanges(sg, branchesToPush, program.force, program.remote);
     }
 
     if (program.createPrs) {
