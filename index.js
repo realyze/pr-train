@@ -16,7 +16,7 @@ const { printQuote } = require('./quotes');
 
 const colors = require('colors');
 
-const MERGE_STEP_DELAY_MS = 750;
+const MERGE_STEP_DELAY_MS = 1000;
 const MERGE_STEP_DELAY_WAIT_FOR_LOCK = 2500;
 
 const DEFAULT_REMOTE = 'origin';
