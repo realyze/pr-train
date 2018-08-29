@@ -96,12 +96,13 @@ async function constructPrMsg(sg, branch) {
     return {title: title.trim(), body: body.trim()};
 }
 
-function constructTrainNavigation(branchToPrDict, currentBranch) {
+function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch) {
     let contents = '#### PR chain:\n'
     return Object.keys(branchToPrDict).reduce((output, branch) => {
         const maybeHandRight = branch === currentBranch ? '👉 ' : '';
         const maybeHandLeft = branch === currentBranch ? ' 👈 **YOU ARE HERE**' : '';
-        output += `${maybeHandRight}#${branchToPrDict[branch].pr} (${branchToPrDict[branch].title.trim()})${maybeHandLeft}`
+        const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
+        output += `${maybeHandRight}#${branchToPrDict[branch].pr}${combinedInfo}(${branchToPrDict[branch].title.trim()})${maybeHandLeft}`
         return output + '\n'
     }, contents);
 }
@@ -197,7 +198,7 @@ async function ensurePrsExist(sg, sortedBranches, combinedBranch, remote = DEFAU
         const {title, body} = branch === combinedBranch
             ? getCombinedBranchPrMsg()
             : await constructPrMsg(sg, branch);
-        const navigation = constructTrainNavigation(prDict, branch);
+        const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
         process.stdout.write(`Updating PR for branch ${branch}...`)
         await ghPr.updateAsync({ title, body: `${body}\n${navigation}` });
         console.log(emoji.get('white_check_mark'));
