@@ -29,12 +29,13 @@ async function combineBranches(sg, rebase, from, to) {
     } else {
         process.stdout.write(`merging ${from} into branch ${to}... `);
     }
-    await sg.checkout(to);
     try {
+        await sg.checkout(to);
         await rebase ? sg.rebase ([from]) : sg.merge([from]);
     } catch (e) {
         if (!e.conflicts || e.conflicts.length === 0) {
             await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
+            await sg.checkout(to);
             await rebase ? sg.rebase ([from]) : sg.merge([from]);
         }
     }
@@ -254,7 +255,12 @@ async function main() {
 
     const switchToBranchIndex = program.args[0];
     if (switchToBranchIndex) {
-        const targetBranch = sortedBranches.find(b => b.indexOf(`${branchRoot}/${switchToBranchIndex}`) === 0)
+        let targetBranch;
+        if (switchToBranchIndex === 'combined') {
+            targetBranch = `${branchRoot}/combined`;
+        } else {
+            targetBranch = sortedBranches.find(b => b.indexOf(`${branchRoot}/${switchToBranchIndex}`) === 0)
+        }
         if (!targetBranch) {
             console.log(`Could not find branch with index ${switchToBranchIndex}`.red);
             process.exit(3);
