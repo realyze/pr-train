@@ -22,12 +22,16 @@
     "colors": "^1.2.1",
     "commander": "^2.15.0",
     "figlet": "^1.2.0",
+    "js-yaml": "^3.12.0",
     "lodash.difference": "^4.5.0",
     "lodash.sortby": "^4.7.0",
     "node-emoji": "^1.8.1",
     "octonode": "^0.9.3",
     "progress": "^2.0.0",
     "promptly": "^3.0.3",
-    "simple-git": "^1.92.0"
+    "simple-git": "^1.102.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^3.11.2"
   }
 }
