@@ -1,0 +1,17 @@
+trains:
+  # This is an example. This PR train would have 4 branches plus 1 "combined" branch to run tests etc on.
+  #
+  # The order of branches is important - it defines what will be merged (or rebased) into what.
+  #
+  # The train identifier ("fix important things") is only there for readability and it can be any string. We
+  # suggest you use a short description explaining what the PR train is for.
+  #
+  # The "combined" branch is optional. If you include it, pr-train will create a "combined" branch for you.
+  #
+  # fix important things:
+  #   - zoe_branch_fix_first_thing
+  #   - zoe_branch_fix_the_other_thing
+  #   - zoe_branch_update_tests
+  #   - zoe_branch_regenerate_noisy_snapshots
+  #   - zoe_fix_the_important_things:
+  #       combined: true
