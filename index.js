@@ -38,14 +38,9 @@ async function combineBranches(sg, rebase, from, to) {
 
 async function pushChanges(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log(`Pushing changes to remote ${remote}...`);
-  const bar = new ProgressBar('Pushing [:bar] :percent :elapsed', {
-    width: 20,
-    total: branches.length + 1,
-    clear: true,
-  });
-  bar.tick(1);
-  const promises = branches.map(b => sg.push(remote, b, { '--force': forcePush }).then(() => bar.tick(1)));
-  await Promise.all(promises);
+  // Ugh... `raw` doesn't allow empty strings or `undefined`s, so let's filter any "empty" args.
+  const args = ['push', forcePush ? '--force' : undefined, remote].concat(branches).filter(Boolean);
+  await sg.raw(args);
   console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
