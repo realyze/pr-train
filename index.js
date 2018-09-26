@@ -64,7 +64,7 @@ async function getConfigPath(sg) {
 }
 
 /**
- * @typedef {string | Object.<string, { combined: boolean }>} BranchCfg
+ * @typedef {string | Object.<string, { combined: boolean, initSha?: string }>} BranchCfg
  * @typedef {Object.<string, Array.<string | BranchCfg>>} TrainCfg
  */
 
@@ -147,15 +147,14 @@ async function handleSwitchToBranchCommand(sg, sortedBranches, combinedBranch) {
 async function main() {
   program
     .version(package.version)
+    .option('--init', 'Creates a .pr-train.yml file with an example configuration')
     .option('-p, --push', 'Push changes')
     .option('--list', 'List branches in current train')
     .option('-r, --rebase', 'Rebase branches rather than merging them')
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-    .option('--no-quote', 'Do not print wise quote on exit')
-    .option('-c, --create-prs', 'Create GitHub PRs from your train branches')
-    .option('--init', 'Creates a .pr-train.yml file with an example configuration');
+    .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
 
   program.on('--help', () => {
     console.log('');
