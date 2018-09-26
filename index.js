@@ -202,6 +202,10 @@ async function main() {
 
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
   const trainCfg = await getBranchesConfigInCurrentTrain(sg);
+  if (!trainCfg) {
+    console.log(`Current branch ${currentBranch} is not a train branch.`);
+    process.exit(1);
+  }
   const sortedTrainBranches = getBranchesInCurrentTrain(trainCfg);
   const combinedTrainBranch = getCombinedBranch(trainCfg);
 
