@@ -160,7 +160,10 @@ async function main() {
     console.log('');
     console.log('  Switching branches:');
     console.log('');
-    console.log('    $ `git pr-train <index>` will switch to branch with index 2');
+    console.log(
+      '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5). ' +
+        'If <index> is "combined", it will switch to the combined branch.'
+    );
     console.log('');
     console.log('  Creating GitHub PRs:');
     console.log('');
