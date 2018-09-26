@@ -1,8 +1,8 @@
 # pr-train 🚃
 
-`git pr-train` helps you manage PR chains when you need to split your long PR into a sequence of smaller ones.
+`git pr-train` helps you manage your PR chain when you need split your long PR into smaller ones.
 
-### More details
+## More details
 
 If you have a chain of PRs, `git pr-train`:
 
