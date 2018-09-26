@@ -25,12 +25,12 @@ async function combineBranches(sg, rebase, from, to) {
   }
   try {
     await sg.checkout(to);
-    (await rebase) ? sg.rebase([from]) : sg.merge([from]);
+    await (rebase ? sg.rebase([from]) : sg.merge([from]));
   } catch (e) {
     if (!e.conflicts || e.conflicts.length === 0) {
       await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
       await sg.checkout(to);
-      (await rebase) ? sg.rebase([from]) : sg.merge([from]);
+      await (rebase ? sg.rebase([from]) : sg.merge([from]));
     }
   }
   console.log(emoji.get('white_check_mark'));
