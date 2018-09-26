@@ -2,6 +2,8 @@
 
 `git pr-train` helps you manage PR chains when you need to split your long PR into a sequence of smaller ones.
 
+### More details
+
 If you have a chain of PRs, `git pr-train`:
 
 1. Makes sure all your branches further up the chain get updated when you modify one of them
@@ -9,17 +11,17 @@ If you have a chain of PRs, `git pr-train`:
 
 #### Why?
 
-Because doing those two things manually can be (very) frustrating.
+Because doing those two things manually can be (very) frustrating, believe you me.
 
 ## How does it work?
 
-You worked on a feature and you have a patch that is over 1000 SLOCs long. That's a big chunk to review. As a good citizen, you want to split the diff into multiple PRs, e.g.:
+You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. And a big chunk to review. As a good citizen, you want to split the diff into multiple PRs, e.g.:
 
 - `fred_billing-refactor_frontend_bits`
 - `fred_billing-refactor_backend_bits`
-- `fred/billing-refactor_tests`
+- `fred_billing-refactor_tests`
 
-We call that a _PR train_.
+That's what we call that a _PR train_.
 
 If you modify a branch (or e.g. merge/rebase `fred_billing-refactor_frontend_bits` on top of `master`), you'll want all the other branches to receive the change. `git pr-train` does that by merging (or rebasing) each branch into their child branch (i.e., branch 1 into branch 2, branch 2 into branch 3 etc).
 
