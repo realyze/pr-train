@@ -212,7 +212,7 @@ async function main() {
     await sg.raw(['branch', combinedTrainBranch, lastBranchBeforeCombined]);
   }
 
-  handleSwitchToBranchCommand(sg, sortedTrainBranches, combinedTrainBranch);
+  await handleSwitchToBranchCommand(sg, sortedTrainBranches, combinedTrainBranch);
 
   console.log(`I've found these partial branches:`);
   console.log(
