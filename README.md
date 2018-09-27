@@ -49,6 +49,16 @@ trains:
 
 With this config, `fred_billing-refactor_frontend_bits` branch will be the first one in the train and `fred_billing-refactor_tests` will be the last.
 
+#### "One-by-one" workflow
+If you want to merge your branches one by one from the "bottom" as they get LGTM'd (i.e., they compile, pass tests and make sense on their own):
+ 1. Merge the LGTM'd branch into `master`
+ 2. Merge `master` into next train branch (or rebase that branch on top of `master`)
+ 3. Change the GitHub PR base to `master` so that the diff only contains the expected changes
+ 4. Delete then merged branch from `.pr-train.yml`
+ 5. Run `git pr-train` to propagate the changes through the train
+ 
+Note that steps 1-3 are not pr-train specific, that's just how one-by-one workflow generally works.
+
 #### "Combined Branch" workflow
 
 Sometimes, you may want to split your code into PRs that cannot be merged separately (e.g., code changes first, then tests and snapshot updates last). In those cases it might be useful to have a branch that combines code from all the subbranches - we call that a "combined branch". It points to the same commit as the last sub-branch in the train with the exception that the PR created for this branch would be based off `master` (i.e., it will contain the full diff).
