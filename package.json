@@ -1,7 +1,7 @@
 {
   "name": "git-pr-train",
   "version": "2.0.9",
-  "description": "",
+  "description": "A tool to help manage PR chains",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
