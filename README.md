@@ -1,21 +1,41 @@
 # pr-train 🚃
 
-`git pr-train` helps you manage your PR chain when you need split your long PR into smaller ones.
+`git pr-train` helps you manage your PR chain when you need split a long PR into smaller ones.
 
-## More details
+## What does it do?
 
 If you have a chain of PRs, `git pr-train`:
 
-1. Makes sure all your branches further up the chain get updated when you modify one of them
+1. Makes sure all your branches in the chain get updated when you modify any of them
 2. Creates GitHub PRs for you with a table of contents
 
-#### Why?
+Doing those two things manually can be (very) tedious and frustrating, believe you me.
 
-Because doing those two things manually can be (very) frustrating, believe you me.
+## Usage
 
-## How does it work?
+Install with `npm i -g git-pr-train`.
 
-You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. And a big chunk to review. As a good citizen, you want to split the diff into multiple PRs, e.g.:
+Run `git pr-train --init` in your repo root to generate a `.pr-train.yml` file (don't forget to gitignore).
+
+Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell pr-train which branches form the chain and you're good to go.
+
+### Basic usage examples
+
+- `git pr-train -p` will merge branches sequentially one into another and push
+- `git pr-train -r -p -f` will rebase branches instead of merging and then push with `--force`.
+- `git pr-train -h` to print usage information
+
+### Automatically create GitHub PRs from chained branches
+
+**Pre-requisite**: Create a `${HOME}/.pr-train` file with a single line which is your GH access token (you can create one [here](https://github.com/settings/tokens)).
+
+Run `git pr-train -p --create-prs` to create GitHub PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be promted before the PRs are created.
+
+_Please note that if you run with `--create-prs` again, `pr-train` will overwrite the descriptions of the existing PRs._
+
+## Example with explanation
+
+You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. Ass a good citizen, you want to split the diff into multiple PRs, e.g.:
 
 - `fred_billing-refactor_frontend_bits`
 - `fred_billing-refactor_backend_bits`
@@ -25,15 +45,9 @@ That's what we call that a _PR train_.
 
 If you modify a branch (or e.g. merge/rebase `fred_billing-refactor_frontend_bits` on top of `master`), you'll want all the other branches to receive the change. `git pr-train` does that by merging (or rebasing) each branch into their child branch (i.e., branch 1 into branch 2, branch 2 into branch 3 etc).
 
-If you wish, it also makes sure there is a "combined" branch (which contains the code of all subbranches and you can build it and run tests on it).
+If you wish, it also makes sure there is a "combined" branch (which contains the code of all subbranches and you can build it and run tests on it - please see the `Chained PR workflows` section below).
 
-## Installation
-
-Run `npm install -g git-pr-train@next`.
-
-## Usage
-
-Before using `git pr-train` for the first time, run `git pr-train --init` to create a `.pr-train.yml` file in your repo root (_please make sure to gitignore the `.pr-train.yml` file_).
+### `.pr-train.yml` config
 
 The `.pr-train.yml` file contains simple configuration that describes your trains. For example, the "billing refactor" example from above would be expressed as:
 
@@ -49,14 +63,18 @@ trains:
 
 With this config, `fred_billing-refactor_frontend_bits` branch will be the first one in the train and `fred_billing-refactor_tests` will be the last.
 
+## Chained PR workflows
+
 #### "One-by-one" workflow
+
 If you want to merge your branches one by one from the "bottom" as they get LGTM'd (i.e., they compile, pass tests and make sense on their own):
- 1. Merge the LGTM'd branch into `master`
- 2. Merge `master` into next train branch (or rebase that branch on top of `master`)
- 3. Change the GitHub PR base to `master` so that the diff only contains the expected changes
- 4. Delete then merged branch from `.pr-train.yml`
- 5. Run `git pr-train` to propagate the changes through the train
- 
+
+1.  Merge the LGTM'd branch into `master`
+2.  Merge `master` into next train branch (or rebase that branch on top of `master`)
+3.  Change the GitHub PR base to `master` so that the diff only contains the expected changes
+4.  Delete then merged branch from `.pr-train.yml`
+5.  Run `git pr-train` to propagate the changes through the train
+
 Note that steps 1-3 are not pr-train specific, that's just how one-by-one workflow generally works.
 
 #### "Combined Branch" workflow
@@ -86,11 +104,3 @@ Unlike the sub-branches, the combined branch doesn't need to exist when you run 
 Run `git pr-train` in your working dir when you're on any branch that belongs to a PR train. You don't have to be on the first branch, any branch will do. Use `-r/--rebase` option if you'd like to rebase branches on top of each other rather than merge (note: you will have to push with `git pr-train -pf` in that case).
 
 `git pr-train -p` will merge/rebase and push your updated changes to remote `origin` (configurable via `--remote` option).
-
-### Automagically creating GitHub PRs
-
-**Pre-requisite**: Create a `${HOME}/.pr-train` file with a single line which is your GH access token (you can create one [here](https://github.com/settings/tokens)).
-
-Pass `--create-prs` to create GH PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be promted before the PRs are created.
-
-**Please note that re-running with `--create-prs` will overwrite the descriptions of the existing PRs (and you most likely do not want that).**
