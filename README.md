@@ -35,7 +35,7 @@ _Please note that if you run with `--create-prs` again, `pr-train` will overwrit
 
 ## Example with explanation
 
-You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. Ass a good citizen, you want to split the diff into multiple PRs, e.g.:
+You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. As a good citizen, you want to split the diff into multiple PRs, e.g.:
 
 - `fred_billing-refactor_frontend_bits`
 - `fred_billing-refactor_backend_bits`
