@@ -47,6 +47,8 @@ If you modify a branch (or e.g. merge/rebase `fred_billing-refactor_frontend_bit
 
 If you wish, it also makes sure there is a "combined" branch (which contains the code of all subbranches and you can build it and run tests on it - please see the `Chained PR workflows` section below).
 
+Now everytime you make a change to any branch in the train, run `git pr-train -p` to merge and push branches or `git pr-train -rpf` to rebase branches and force-push (if you prefer rebasing).
+
 ### `.pr-train.yml` config
 
 The `.pr-train.yml` file contains simple configuration that describes your trains. For example, the "billing refactor" example from above would be expressed as:
