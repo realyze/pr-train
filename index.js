@@ -82,10 +82,13 @@ function getBranchName(branchCfg) {
 /**
  * @return {Promise.<Array.<BranchCfg>>}
  */
-async function getBranchesConfigInCurrentTrain(sg) {
+async function getBranchesConfigInCurrentTrain(sg, config) {
   const branches = await sg.branchLocal();
   const currentBranch = branches.current;
-  const { trains } = await loadConfig(sg);
+  const { trains } = config;
+  if (!trains) {
+    return null;
+  }
   const key = Object.keys(trains).find(trainKey => {
     const branches = trains[trainKey];
     const branchNames = branches.map(b => getBranchName(b));
@@ -198,8 +201,16 @@ async function main() {
     process.exit(0);
   }
 
+  let ymlConfig;
+  try {
+    ymlConfig = await loadConfig(sg);
+  } catch {
+    console.log('`.pr-train.yml` file not found. Please run `git pr-train --init` to create one.'.red);
+    process.exit(1);
+  }
+
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
-  const trainCfg = await getBranchesConfigInCurrentTrain(sg);
+  const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
   if (!trainCfg) {
     console.log(`Current branch ${currentBranch} is not a train branch.`);
     process.exit(1);
