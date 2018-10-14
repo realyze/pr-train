@@ -226,10 +226,12 @@ async function main() {
   await handleSwitchToBranchCommand(sg, sortedTrainBranches, combinedTrainBranch);
 
   console.log(`I've found these partial branches:`);
-  console.log(
-    sortedTrainBranches.map(b => ` -> ${b.green}${b === combinedTrainBranch ? ' (combined)' : ''}`).join('\n'),
-    '\n'
-  );
+  const branchesToPrint = sortedTrainBranches.map(b => {
+    const branch = b === currentBranch ? `${b.green.bold}` : b;
+    const suffix = b === combinedTrainBranch ? ' (combined)' : '';
+    return ` -> ${branch}${suffix}`;
+  });
+  console.log(branchesToPrint.join('\n'), '\n');
   if (program.list) {
     return;
   }
