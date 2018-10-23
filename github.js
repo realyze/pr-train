@@ -5,7 +5,14 @@ const { DEFAULT_REMOTE } = require('./consts');
 const fs = require('fs');
 const colors = require('colors');
 const emoji = require('node-emoji');
+const simpleGit = require('simple-git/promise');
 
+/**
+ *
+ * @param {simpleGit.SimpleGit} sg
+ * @param {string} branch
+ * @return Promise.<{title: string, body: string}>
+ */
 async function constructPrMsg(sg, branch) {
   const title = await sg.raw(['log', '--format=%s', '-n', '1', branch]);
   const body = await sg.raw(['log', '--format=%b', '-n', '1', branch]);
@@ -15,9 +22,15 @@ async function constructPrMsg(sg, branch) {
   };
 }
 
+/**
+ *
+ * @param {Object.<string, {title: string, pr: number}>} branchToPrDict
+ * @param {string} currentBranch
+ * @param {string} combinedBranch
+ */
 function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch) {
-  let contents = '#### PR chain:\n';
-  return Object.keys(branchToPrDict).reduce((output, branch) => {
+  let contents = '<pr-train-toc>\n\n#### PR chain:\n';
+  contents = Object.keys(branchToPrDict).reduce((output, branch) => {
     const maybeHandRight = branch === currentBranch ? '👉 ' : '';
     const maybeHandLeft = branch === currentBranch ? ' 👈 **YOU ARE HERE**' : '';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
@@ -26,6 +39,8 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
     ].title.trim()})${maybeHandLeft}`;
     return output + '\n';
   }, contents);
+  contents += '\n</pr-train-toc>';
+  return contents;
 }
 
 function readGHKey() {
@@ -35,6 +50,26 @@ function readGHKey() {
     .trim();
 }
 
+/**
+ *
+ * @param {string} newNavigation
+ * @param {string} body
+ */
+function upsertNavigationInBody(newNavigation, body) {
+  if (body.match(/<pr-train-toc>/)) {
+    return body.replace(/<pr-train-toc>[^]*<\/pr-train-toc>/, newNavigation);
+  } else {
+    return body + '\n' + newNavigation;
+  }
+}
+
+/**
+ *
+ * @param {simpleGit.SimpleGit} sg
+ * @param {Array.<string>} allBranches
+ * @param {string} combinedBranch
+ * @param {string} remote
+ */
 async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_REMOTE) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());
@@ -45,6 +80,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     process.exit(4);
   }
 
+  /** @type string */
   let combinedBranchTitle;
   if (combinedBranch) {
     console.log();
@@ -87,6 +123,9 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
   console.log('');
   // Construct branch_name <-> PR_data mapping.
   // Note: We're running this serially to have nicer logs.
+  /**
+   * @type Object.<string, {title: string, pr: number, body: string, updating: boolean}>
+   */
   const prDict = await allBranches.reduce(async (_memo, branch, index) => {
     const memo = await _memo;
     const { title, body } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
@@ -96,8 +135,10 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
       head: `${nick}:${branch}`,
     });
     let prResponse = prs[0] && prs[0][0];
+    let prExists = false;
     if (prResponse) {
       console.log('yep');
+      prExists = true;
     } else {
       console.log('nope');
       const payload = {
@@ -107,12 +148,20 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
         body,
       };
       process.stdout.write(`Creating PR for branch "${branch}"...`);
-      prResponse = (await ghRepo.prAsync(payload))[0];
+      console.log('payload', payload);
+      try {
+        prResponse = (await ghRepo.prAsync(payload))[0];
+      } catch (e) {
+        console.error(JSON.stringify(e, null, 2));
+        throw e;
+      }
       console.log(emoji.get('white_check_mark'));
     }
     memo[branch] = {
-      title,
+      body: prResponse.body,
+      title: prResponse.title,
       pr: prResponse.number,
+      updating: prExists,
     };
     return memo;
   }, Promise.resolve({}));
@@ -121,13 +170,19 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
   // Note: We're running this serially to have nicer logs.
   await allBranches.reduce(async (memo, branch) => {
     await memo;
-    const ghPr = octoClient.pr(nickAndRepo, prDict[branch].pr);
-    const { title, body } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
+    const prInfo = prDict[branch];
+    const ghPr = octoClient.pr(nickAndRepo, prInfo.pr);
+    const { title, body } = prInfo.updating
+      ? prInfo // Updating existing PR: keep current body and title.
+      : branch === combinedBranch
+        ? getCombinedBranchPrMsg()
+        : await constructPrMsg(sg, branch);
     const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
+    const newBody = upsertNavigationInBody(navigation, body);
     process.stdout.write(`Updating PR for branch ${branch}...`);
     await ghPr.updateAsync({
       title,
-      body: `${body}\n${navigation}`,
+      body: `${newBody}`,
     });
     console.log(emoji.get('white_check_mark'));
   }, Promise.resolve());

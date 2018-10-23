@@ -4,7 +4,6 @@
 const simpleGit = require('simple-git/promise');
 const difference = require('lodash.difference');
 const program = require('commander');
-const ProgressBar = require('progress');
 const emoji = require('node-emoji');
 const fs = require('fs');
 const yaml = require('js-yaml');
@@ -36,7 +35,7 @@ async function combineBranches(sg, rebase, from, to) {
   console.log(emoji.get('white_check_mark'));
 }
 
-async function pushChanges(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
+async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log(`Pushing changes to remote ${remote}...`);
   // Ugh... `raw` doesn't allow empty strings or `undefined`s, so let's filter any "empty" args.
   const args = ['push', forcePush ? '--force' : undefined, remote].concat(branches).filter(Boolean);
@@ -236,12 +235,7 @@ async function main() {
     return;
   }
 
-  for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
-    await combineBranches(sg, program.rebase, sortedTrainBranches[i], sortedTrainBranches[i + 1]);
-    await sleep(MERGE_STEP_DELAY_MS);
-  }
-
-  if (program.push || program.pushMerged) {
+  async function findAndPushBranches() {
     let branchesToPush = sortedTrainBranches;
     if (!program.pushMerged) {
       branchesToPush = await getUnmergedBranches(sg, sortedTrainBranches);
@@ -250,11 +244,24 @@ async function main() {
         console.log(`Not pushing already merged branches: ${branchDiff.join(', ')}`);
       }
     }
-    pushChanges(sg, branchesToPush, program.force, program.remote);
+    pushBranches(sg, branchesToPush, program.force, program.remote);
   }
 
+  // If we're creating PRs, don't combine branches (that might change branch HEADs and consequently
+  // the PR titles and descriptions). Just push and create the PRs.
   if (program.createPrs) {
+    await findAndPushBranches();
     await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, program.remote);
+    return;
+  }
+
+  for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
+    await combineBranches(sg, program.rebase, sortedTrainBranches[i], sortedTrainBranches[i + 1]);
+    await sleep(MERGE_STEP_DELAY_MS);
+  }
+
+  if (program.push || program.pushMerged) {
+    await findAndPushBranches();
   }
 
   await sg.checkout(currentBranch);
