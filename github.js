@@ -148,7 +148,6 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
         body,
       };
       process.stdout.write(`Creating PR for branch "${branch}"...`);
-      console.log('payload', payload);
       try {
         prResponse = (await ghRepo.prAsync(payload))[0];
       } catch (e) {
