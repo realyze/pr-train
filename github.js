@@ -1,7 +1,9 @@
 // @ts-check
 const octo = require('octonode');
 const promptly = require('promptly');
-const { DEFAULT_REMOTE } = require('./consts');
+const {
+  DEFAULT_REMOTE
+} = require('./consts');
 const fs = require('fs');
 const colors = require('colors');
 const emoji = require('node-emoji');
@@ -41,6 +43,15 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
   }, contents);
   contents += '\n</pr-train-toc>';
   return contents;
+}
+
+function checkGHKeyExists() {
+  try {
+    readGHKey()
+  } catch (e) {
+    console.log(`"$HOME/.pr-train" not found. Please make sure file exists and contains your GitHub API key.`.red);
+    process.exit(4);
+  }
 }
 
 function readGHKey() {
@@ -101,7 +112,9 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
   console.log('This will create (or update) PRs for the following branches:');
   await allBranches.reduce(async (memo, branch) => {
     await memo;
-    const { title } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
+    const {
+      title
+    } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
     console.log(`  -> ${branch.green} (${title.italic})`);
   }, Promise.resolve());
 
@@ -128,7 +141,10 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
    */
   const prDict = await allBranches.reduce(async (_memo, branch, index) => {
     const memo = await _memo;
-    const { title, body } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
+    const {
+      title,
+      body
+    } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
     const base = index === 0 || branch === combinedBranch ? 'master' : allBranches[index - 1];
     process.stdout.write(`Checking if PR for branch ${branch} already exists... `);
     const prs = await ghRepo.prsAsync({
@@ -171,11 +187,15 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     await memo;
     const prInfo = prDict[branch];
     const ghPr = octoClient.pr(nickAndRepo, prInfo.pr);
-    const { title, body } = prInfo.updating
-      ? prInfo // Updating existing PR: keep current body and title.
-      : branch === combinedBranch
-        ? getCombinedBranchPrMsg()
-        : await constructPrMsg(sg, branch);
+    const {
+      title,
+      body
+    } = prInfo.updating ?
+      prInfo // Updating existing PR: keep current body and title.
+      :
+      branch === combinedBranch ?
+      getCombinedBranchPrMsg() :
+      await constructPrMsg(sg, branch);
     const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
     const newBody = upsertNavigationInBody(navigation, body);
     process.stdout.write(`Updating PR for branch ${branch}...`);
@@ -190,4 +210,5 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
 module.exports = {
   ensurePrsExist,
   readGHKey,
+  checkGHKeyExists,
 };
