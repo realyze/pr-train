@@ -147,7 +147,7 @@ async function main() {
     .version(package.version)
     .option('--init', 'Creates a .pr-train.yml file with an example configuration')
     .option('-p, --push', 'Push changes')
-    .option('--list', 'List branches in current train')
+    .option('-l, --list', 'List branches in current train')
     .option('-r, --rebase', 'Rebase branches rather than merging them')
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
