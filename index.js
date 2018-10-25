@@ -204,7 +204,12 @@ async function main() {
   let ymlConfig;
   try {
     ymlConfig = await loadConfig(sg);
-  } catch {
+  } catch (e) {
+    if (e instanceof yaml.YAMLException) {
+      console.log('There seems to be an error in `.pr-train.yml`.');
+      console.log(e.message);
+      process.exit(1);
+    }
     console.log('`.pr-train.yml` file not found. Please run `git pr-train --init` to create one.'.red);
     process.exit(1);
   }
