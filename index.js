@@ -230,7 +230,7 @@ async function main() {
   const branchesToPrint = sortedTrainBranches.map(b => {
     const branch = b === currentBranch ? `${b.green.bold}` : b;
     const suffix = b === combinedTrainBranch ? ' (combined)' : '';
-    return `[${idx++}] ${branch}${suffix}`;
+    return ` -> [${idx++}] ${branch}${suffix}`;
   });
   console.log(branchesToPrint.join('\n'), '\n');
   if (program.list) {
