@@ -7,17 +7,9 @@ const program = require('commander');
 const emoji = require('node-emoji');
 const fs = require('fs');
 const yaml = require('js-yaml');
-const {
-  ensurePrsExist,
-  readGHKey,
-  checkGHKeyExists,
-} = require('./github');
+const { ensurePrsExist, checkGHKeyExists } = require('./github');
 const colors = require('colors');
-const {
-  DEFAULT_REMOTE,
-  MERGE_STEP_DELAY_MS,
-  MERGE_STEP_DELAY_WAIT_FOR_LOCK
-} = require('./consts');
+const { DEFAULT_REMOTE, MERGE_STEP_DELAY_MS, MERGE_STEP_DELAY_WAIT_FOR_LOCK } = require('./consts');
 const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
@@ -31,13 +23,22 @@ async function combineBranches(sg, rebase, from, to) {
     process.stdout.write(`merging ${from} into branch ${to}... `);
   }
   try {
-    await sg.checkout(to);
-    await (rebase ? sg.rebase([from]) : sg.merge([from]));
+    if (rebase) {
+      console.log(['rebase', '--onto', from, 'ORIG_HEAD', to]);
+      await sg.raw(['rebase', '--onto', from, 'ORIG_HEAD', to]);
+    } else {
+      await sg.checkout(to);
+      await sg.merge([from]);
+    }
   } catch (e) {
     if (!e.conflicts || e.conflicts.length === 0) {
       await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
-      await sg.checkout(to);
-      await (rebase ? sg.rebase([from]) : sg.merge([from]));
+      if (rebase) {
+        await sg.raw(['rebase', '--onto', from, 'ORIG_HEAD', to]);
+      } else {
+        await sg.checkout(to);
+        await sg.merge([from]);
+      }
     }
   }
   console.log(emoji.get('white_check_mark'));
@@ -92,9 +93,7 @@ function getBranchName(branchCfg) {
 async function getBranchesConfigInCurrentTrain(sg, config) {
   const branches = await sg.branchLocal();
   const currentBranch = branches.current;
-  const {
-    trains
-  } = config;
+  const { trains } = config;
   if (!trains) {
     return null;
   }
@@ -151,6 +150,22 @@ async function handleSwitchToBranchCommand(sg, sortedBranches, combinedBranch) {
   process.exit(0);
 }
 
+async function rebaseOnto(sg, ontoBranch, sortedBranches) {
+  await sg.checkout(sortedBranches[0]);
+  console.log(`Checking out branch ${sortedBranches[0]}...`);
+  process.stdout.write(`Rebasing branch ${sortedBranches[0]} onto ${ontoBranch}...`);
+  await sleep(MERGE_STEP_DELAY_MS);
+  await sg.raw(['rebase', ontoBranch]);
+  console.log(emoji.get('white_check_mark'));
+  return sortedBranches.slice(1).reduce(async (memo, branch, i) => {
+    await memo;
+    process.stdout.write(`Rebasing branch ${branch} onto ${sortedBranches[i]}...`);
+    await sg.raw(['rebase', '--onto', sortedBranches[i], 'ORIG_HEAD', branch]);
+    await sleep(MERGE_STEP_DELAY_MS);
+    console.log(emoji.get('white_check_mark'));
+  }, Promise.resolve());
+}
+
 async function main() {
   program
     .version(package.version)
@@ -161,7 +176,8 @@ async function main() {
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-    .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
+    .option('-c, --create-prs', 'Create GitHub PRs from your train branches')
+    .option('--rebase-onto <branch>', 'Rebase the whole train onto a branch');
 
   program.on('--help', () => {
     console.log('');
@@ -169,7 +185,7 @@ async function main() {
     console.log('');
     console.log(
       '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5). ' +
-      'If <index> is "combined", it will switch to the combined branch.'
+        'If <index> is "combined", it will switch to the combined branch.'
     );
     console.log('');
     console.log('  Creating GitHub PRs:');
@@ -220,10 +236,7 @@ async function main() {
     process.exit(1);
   }
 
-  const {
-    current: currentBranch,
-    all: allBranches
-  } = await sg.branchLocal();
+  const { current: currentBranch, all: allBranches } = await sg.branchLocal();
   const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
   if (!trainCfg) {
     console.log(`Current branch ${currentBranch} is not a train branch.`);
@@ -270,9 +283,13 @@ async function main() {
     return;
   }
 
-  for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
-    await combineBranches(sg, program.rebase, sortedTrainBranches[i], sortedTrainBranches[i + 1]);
-    await sleep(MERGE_STEP_DELAY_MS);
+  if (program.rebaseOnto) {
+    await rebaseOnto(sg, program.rebaseOnto, sortedTrainBranches);
+  } else {
+    for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
+      await combineBranches(sg, program.rebase, sortedTrainBranches[i], sortedTrainBranches[i + 1]);
+      await sleep(MERGE_STEP_DELAY_MS);
+    }
   }
 
   if (program.push || program.pushMerged) {
