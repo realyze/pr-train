@@ -7,20 +7,13 @@ const program = require('commander');
 const emoji = require('node-emoji');
 const fs = require('fs');
 const yaml = require('js-yaml');
-const {
-  ensurePrsExist,
-  readGHKey,
-  checkGHKeyExists,
-} = require('./github');
+const { ensurePrsExist, readGHKey, checkGHKeyExists } = require('./github');
 const colors = require('colors');
-const {
-  DEFAULT_REMOTE,
-  MERGE_STEP_DELAY_MS,
-  MERGE_STEP_DELAY_WAIT_FOR_LOCK
-} = require('./consts');
+const { DEFAULT_REMOTE, MERGE_STEP_DELAY_MS, MERGE_STEP_DELAY_WAIT_FOR_LOCK } = require('./consts');
 const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
+const inquirer = require('inquirer');
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -92,9 +85,7 @@ function getBranchName(branchCfg) {
 async function getBranchesConfigInCurrentTrain(sg, config) {
   const branches = await sg.branchLocal();
   const currentBranch = branches.current;
-  const {
-    trains
-  } = config;
+  const { trains } = config;
   if (!trains) {
     return null;
   }
@@ -169,7 +160,7 @@ async function main() {
     console.log('');
     console.log(
       '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5). ' +
-      'If <index> is "combined", it will switch to the combined branch.'
+        'If <index> is "combined", it will switch to the combined branch.'
     );
     console.log('');
     console.log('  Creating GitHub PRs:');
@@ -220,10 +211,7 @@ async function main() {
     process.exit(1);
   }
 
-  const {
-    current: currentBranch,
-    all: allBranches
-  } = await sg.branchLocal();
+  const { current: currentBranch, all: allBranches } = await sg.branchLocal();
   const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
   if (!trainCfg) {
     console.log(`Current branch ${currentBranch} is not a train branch.`);
@@ -243,12 +231,25 @@ async function main() {
   const branchesToPrint = sortedTrainBranches.map((b, idx) => {
     const branch = b === currentBranch ? `${b.green.bold}` : b;
     const suffix = b === combinedTrainBranch ? ' (combined)' : '';
-    return ` -> [${idx}] ${branch}${suffix}`;
+    return `[${idx}] ${branch}${suffix}`;
   });
-  console.log(branchesToPrint.join('\n'), '\n');
+
   if (program.list) {
+    const answer = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'branch',
+        message: 'Select a branch to checkout',
+        choices: branchesToPrint.map((b, i) => ({ name: b, value: sortedTrainBranches[i] })),
+        pageSize: 20,
+      },
+    ]);
+    console.log(`checking out branch ${answer.branch}`);
+    await sg.checkout(answer.branch);
     return;
   }
+
+  console.log(branchesToPrint.map(b => ` -> ${b}`).join('\n'), '\n');
 
   async function findAndPushBranches() {
     let branchesToPush = sortedTrainBranches;
