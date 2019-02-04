@@ -30,6 +30,7 @@
     "octonode": "^0.9.3",
     "progress": "^2.0.0",
     "promptly": "^3.0.3",
+    "shelljs": "^0.8.3",
     "simple-git": "^1.102.0"
   },
   "devDependencies": {

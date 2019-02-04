@@ -14,9 +14,28 @@ const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
 const inquirer = require('inquirer');
+const shelljs = require('shelljs');
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * Returns `true` is ref `b1` is an ancestor of ref `b2`.
+ *
+ * @param {simpleGit.SimpleGit} sg
+ * @param {string} r1
+ * @param {string} r2
+ */
+function isBranchAncestor(sg, r1, r2) {
+  return shelljs.exec(`git merge-base --is-ancestor ${r1} ${r2}`).code === 0;
+}
+
+/**
+ *
+ * @param {simpleGit.SimpleGit} sg
+ * @param {boolean} rebase
+ * @param {string} from
+ * @param {string} to
+ */
 async function combineBranches(sg, rebase, from, to) {
   if (program.rebase) {
     process.stdout.write(`rebasing ${to} onto branch ${from}... `);
@@ -272,7 +291,13 @@ async function main() {
   }
 
   for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
-    await combineBranches(sg, program.rebase, sortedTrainBranches[i], sortedTrainBranches[i + 1]);
+    const b1 = sortedTrainBranches[i];
+    const b2 = sortedTrainBranches[i + 1];
+    if (isBranchAncestor(sg, b1, b2)) {
+      console.log(`Branch ${b1} is an ancestor of ${b2} => nothing to do`);
+      continue;
+    }
+    await combineBranches(sg, program.rebase, b1, b2);
     await sleep(MERGE_STEP_DELAY_MS);
   }
 
