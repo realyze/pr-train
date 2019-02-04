@@ -14,14 +14,27 @@ const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
 const inquirer = require('inquirer');
+const shelljs = require('shelljs');
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ *
+ * @param {simpleGit.SimpleGit} sg
+ * @param {boolean} rebase
+ * @param {string} from
+ * @param {string} to
+ */
 async function combineBranches(sg, rebase, from, to) {
   if (program.rebase) {
     process.stdout.write(`rebasing ${to} onto branch ${from}... `);
   } else {
     process.stdout.write(`merging ${from} into branch ${to}... `);
+  }
+  const isAncestor = shelljs.exec(`git merge-base --is-ancestor ${from} ${to}`).code === 0;
+  if (isAncestor) {
+    console.log(`${emoji.get('white_check_mark')} (noop)`);
+    return;
   }
   try {
     await sg.checkout(to);
