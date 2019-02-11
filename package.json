@@ -1,6 +1,6 @@
 {
   "name": "git-pr-train",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "A tool to help manage PR chains",
   "main": "index.js",
   "scripts": {
