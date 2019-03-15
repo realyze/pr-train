@@ -31,7 +31,9 @@ Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell 
 
 Run `git pr-train -p --create-prs` to create GitHub PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be promted before the PRs are created.
 
-_Please note that if you run with `--create-prs` again, `pr-train` will overwrite the descriptions of the existing PRs._
+If you run with `--create-prs` again, `pr-train` will only override the Table of Contents in your PR, it will _not_ change the rest of the PR descriptions.
+
+**Pro-tip**: If you want to udpate the ToCs in your GitHub PRs, just update the PR titles and re-run pr train with `--create-prs` - it will do the right thing.
 
 ## Example with explanation
 
