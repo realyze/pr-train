@@ -27,7 +27,7 @@ Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell 
 
 ### Automatically create GitHub PRs from chained branches
 
-**Pre-requisite**: Create a `${HOME}/.pr-train` file with a single line which is your GH access token (you can create one [here](https://github.com/settings/tokens)).
+**Pre-requisite**: Create a `${HOME}/.pr-train` file with a single line which is your GH personal access token (you can create one [here](https://github.com/settings/tokens)). The `repo` scope, with ` Full control of private repositories` is needed.
 
 Run `git pr-train -p --create-prs` to create GitHub PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be promted before the PRs are created.
 
