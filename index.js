@@ -117,7 +117,7 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
 }
 
 /**
- * Returns objects where keys are branch names, and values are
+ * Returns object where keys are branch names, and values are
  * branch configs (`title`, `body`, `combined` etc.) or branch names
  * (stubs for compatibility).
  *
