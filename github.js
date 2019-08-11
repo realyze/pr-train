@@ -10,14 +10,28 @@ const emoji = require('node-emoji');
 const simpleGit = require('simple-git/promise');
 
 /**
+ * @typedef {string | Object.<string, { title?: string, body?: string, combined: boolean, initSha?: string }>} BranchCfg
+ */
+
+/**
  *
  * @param {simpleGit.SimpleGit} sg
- * @param {string} branch
+ * @param {string} branchName
+ * @param {Object.<string, BranchCfg>} cfgMap
  * @return Promise.<{title: string, body: string}>
  */
-async function constructPrMsg(sg, branch) {
-  const title = await sg.raw(['log', '--format=%s', '-n', '1', branch]);
-  const body = await sg.raw(['log', '--format=%b', '-n', '1', branch]);
+async function constructPrMsg(sg, branchName, cfgMap) {
+  let title = await sg.raw(['log', '--format=%s', '-n', '1', branchName]);
+  let body = await sg.raw(['log', '--format=%b', '-n', '1', branchName]);
+
+  // Take PR title and body from the config if title exists there
+  if (typeof cfgMap[branchName] !== 'string' && cfgMap[branchName].title) {
+    title = cfgMap[branchName].title;
+    // If body was not specified in config, but title was, then body from
+    // git log is no longer needed.
+    body = cfgMap[branchName].body || '';
+  }
+
   return {
     title: title.trim(),
     body: body.trim(),
@@ -79,9 +93,10 @@ function upsertNavigationInBody(newNavigation, body) {
  * @param {simpleGit.SimpleGit} sg
  * @param {Array.<string>} allBranches
  * @param {string} combinedBranch
+ * @param {Object.<string, BranchCfg>} cfgMap
  * @param {string} remote
  */
-async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_REMOTE) {
+async function ensurePrsExist(sg, allBranches, combinedBranch, cfgMap, remote = DEFAULT_REMOTE) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());
   // TODO: take remote name from `-r` value.
@@ -94,12 +109,16 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
   /** @type string */
   let combinedBranchTitle;
   if (combinedBranch) {
-    console.log();
-    console.log(`Now I will need to know what to call your "combined" branch PR in GitHub.`);
-    combinedBranchTitle = await promptly.prompt(colors.bold(`Combined branch PR title:`));
-    if (!combinedBranchTitle) {
-      console.log(`Cannot continue.`.red, `(I need to know what the title of your combined branch PR should be.)`);
-      process.exit(5);
+    if (!cfgMap[combinedBranch].title) {
+      console.log();
+      console.log(`Now I will need to know what to call your "combined" branch PR in GitHub.`);
+      combinedBranchTitle = await promptly.prompt(colors.bold(`Combined branch PR title:`));
+      if (!combinedBranchTitle) {
+        console.log(`Cannot continue.`.red, `(I need to know what the title of your combined branch PR should be.)`);
+        process.exit(5);
+      }
+    } else {
+      combinedBranchTitle = cfgMap[combinedBranch].title
     }
   }
 
@@ -114,7 +133,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     await memo;
     const {
       title
-    } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
+    } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch, cfgMap);
     console.log(`  -> ${branch.green} (${title.italic})`);
   }, Promise.resolve());
 
@@ -144,7 +163,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     const {
       title,
       body
-    } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
+    } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch, cfgMap);
     const base = index === 0 || branch === combinedBranch ? 'master' : allBranches[index - 1];
     process.stdout.write(`Checking if PR for branch ${branch} already exists... `);
     const prs = await ghRepo.prsAsync({
@@ -195,7 +214,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
       :
       branch === combinedBranch ?
       getCombinedBranchPrMsg() :
-      await constructPrMsg(sg, branch);
+      await constructPrMsg(sg, branch, cfgMap);
     const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
     const newBody = upsertNavigationInBody(navigation, body);
     process.stdout.write(`Updating PR for branch ${branch}...`);

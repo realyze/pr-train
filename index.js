@@ -78,7 +78,7 @@ async function getConfigPath(sg) {
 }
 
 /**
- * @typedef {string | Object.<string, { combined: boolean, initSha?: string }>} BranchCfg
+ * @typedef {string | Object.<string, { title?: string, body?: string, combined: boolean, initSha?: string }>} BranchCfg
  * @typedef {Object.<string, Array.<string | BranchCfg>>} TrainCfg
  */
 
@@ -114,6 +114,32 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
     return branchNames.indexOf(currentBranch) >= 0;
   });
   return key && trains[key];
+}
+
+/**
+ * Returns objects where keys are branch names, and values are
+ * branch configs (`title`, `body`, `combined` etc.) or branch names
+ * (stubs for compatibility).
+ *
+ * This object is useful for quick access to branch config when looping
+ * over branch names.
+ *
+ * @param {Array.<BranchCfg>} trainCfg
+ * @return {Object.<string, BranchCfg>}
+ */
+function getConfigMapFromTrainBranchesConfig(trainCfg) {
+  const map = {};
+
+  for (branch of trainCfg) {
+    if (typeof branch === 'string') {
+      map[branch] = branch;
+    } else {
+      const branchName = Object.keys(branch)[0];
+      map[branchName] = branch[branchName];
+    }
+  }
+
+  return map;
 }
 
 /**
@@ -286,7 +312,10 @@ async function main() {
   // the PR titles and descriptions). Just push and create the PRs.
   if (program.createPrs) {
     await findAndPushBranches();
-    await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, program.remote);
+
+    const cfgMap = getConfigMapFromTrainBranchesConfig(trainCfg);
+
+    await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, cfgMap, program.remote);
     return;
   }
 
