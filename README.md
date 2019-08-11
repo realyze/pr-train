@@ -60,6 +60,8 @@ trains:
   big billing refactoring:
     - fred_billing-refactor_frontend_bits
     - fred_billing-refactor_backend_bits
+        title: BE changes for billing refactor # optional PR title
+        body: This refactor... # optional PR description
     - fred_billing-refactor_tests
   #
   # ...config for older trains follows...
