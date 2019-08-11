@@ -118,10 +118,10 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
 
 /**
  * Returns object where keys are branch names, and values are
- * branch configs (`title`, `body`, `combined` etc.) or branch names
+ * branch configs (with `title`, `body`, `combined` etc.) or branch names
  * (stubs for compatibility).
  *
- * This object is useful for quick access to branch config when looping
+ * This object is useful for quick check of branch config when looping
  * over branch names.
  *
  * @param {Array.<BranchCfg>} trainCfg
