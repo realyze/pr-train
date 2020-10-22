@@ -72,9 +72,7 @@ async function checkoutNewBranch(sg, newBranch){
   }
 }
 
-async function addCurrentBranchToYmlConfig(sg, branchCfg, trainCfg, ymlConfig) {
-  const trainKey = getKeyOfTrain(trainCfg, ymlConfig);
-  
+async function addCurrentBranchToYmlConfig(sg, atIndex, trainKey, ymlConfig) {  
   const branches = await sg.branchLocal();
   const currentBranch = branches.current;
   const { trains } = ymlConfig;
@@ -84,8 +82,7 @@ async function addCurrentBranchToYmlConfig(sg, branchCfg, trainCfg, ymlConfig) {
   } else {
     const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig));
     const branchConfigs = newYmlConfig.trains[trainKey];
-    const newBranchIndex = branchConfigs.indexOf(branchCfg) + 1;
-    branchConfigs.splice(newBranchIndex, 0, currentBranch);
+    branchConfigs.splice(atIndex, 0, currentBranch);
     return newYmlConfig;
   }
 }
@@ -157,6 +154,13 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
  */
 function getBranchesInCurrentTrain(branchConfig) {
   return branchConfig.map(b => getBranchName(b));
+}
+/**
+ * @param {Array.<BranchCfg>} branchConfig
+ */
+async function getCurrentBranchIndex(sg, trainCfg) {
+  const branches = await sg.branchLocal();
+  return trainCfg.map(b => getBranchName(b)).indexOf(branches.current);
 }
 
 function getKeyOfTrain(trainCgf, ymlConfig) {
@@ -334,12 +338,14 @@ async function main() {
   }
   
   if (program.newBranch) {
-    const branchOnTrain = currentBranch
+    const trainKey = getKeyOfTrain(trainCfg, ymlConfig);
+    const currentBranchIndex = await getCurrentBranchIndex(sg, trainCfg);
+    const newBranchIndex = currentBranchIndex + 1;
     await checkoutNewBranch(sg, program.newBranch);
-    const newYmlConfig = await addCurrentBranchToYmlConfig(sg, branchOnTrain, trainCfg, ymlConfig);
+    const newYmlConfig = await addCurrentBranchToYmlConfig(sg, newBranchIndex, trainKey, ymlConfig);
     if (newYmlConfig) {
       await saveConfig(sg, newYmlConfig);
-      console.log(`${program.newBranch} added to the train after ${branchOnTrain}`)
+      console.log(`${program.newBranch} added to the train after ${currentBranch}`)
     }
     return;
   }
