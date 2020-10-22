@@ -64,17 +64,30 @@ async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
 }
 
 async function checkoutNewBranch(sg, newBranch){
-  await sg.raw(['checkout', '-b', newBranch]);
+  try {
+    await sg.raw(['checkout', '-b', newBranch]);
+  } catch (e) {
+    console.log(`${newBranch} is an existing branch... Checking out`)
+    await sg.raw(['checkout', newBranch]);
+  }
 }
 
-async function addCurrentBranchToYmlConfig(sg, trainCfg, ymlConfig) {
-  const trainKey = ymlConfig.trains.indexOf(trainCfg);
+async function addCurrentBranchToYmlConfig(sg, branchCfg, trainCfg, ymlConfig) {
+  const trainKey = getKeyOfTrain(trainCfg, ymlConfig);
+  
   const branches = await sg.branchLocal();
   const currentBranch = branches.current;
-  const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig));
-  const branchConfigs = newYmlConfig.trains[trainKey];
-  branchConfigs.push(currentBranch);
-  return newYmlConfig;
+  const { trains } = ymlConfig;
+  if (trains[trainKey].indexOf(currentBranch) >=0) {
+    console.log(`${currentBranch} is already in this train`)
+    return null
+  } else {
+    const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig));
+    const branchConfigs = newYmlConfig.trains[trainKey];
+    const newBranchIndex = branchConfigs.indexOf(branchCfg) + 1;
+    branchConfigs.splice(newBranchIndex, 0, currentBranch);
+    return newYmlConfig;
+  }
 }
 
 async function getUnmergedBranches(sg, branches) {
@@ -146,6 +159,12 @@ function getBranchesInCurrentTrain(branchConfig) {
   return branchConfig.map(b => getBranchName(b));
 }
 
+function getKeyOfTrain(trainCgf, ymlConfig) {
+  const { trains } = ymlConfig;
+  return Object.keys(trains).find(trainKey => {
+    return trains[trainKey] === trainCgf;
+  });
+}
 /**
  * @param {Array.<BranchCfg>} branchConfig
  */
@@ -195,7 +214,7 @@ async function main() {
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
     .option('-c, --create-prs', 'Create GitHub PRs from your train branches')
-    .option('-n <branch>, --new-branch <branch>', 'Create a new branch in current train');
+    .option('-n, --new-branch <branch>', 'Create a new branch in current train');
 
   program.on('--help', () => {
     console.log('');
@@ -315,9 +334,13 @@ async function main() {
   }
   
   if (program.newBranch) {
+    const branchOnTrain = currentBranch
     await checkoutNewBranch(sg, program.newBranch);
-    const newYmlConfig = await addCurrentBranchToYmlConfig(sg, trainCfg, ymlConfig);
-    await saveConfig(newYmlConfig);
+    const newYmlConfig = await addCurrentBranchToYmlConfig(sg, branchOnTrain, trainCfg, ymlConfig);
+    if (newYmlConfig) {
+      await saveConfig(sg, newYmlConfig);
+      console.log(`${program.newBranch} added to the train after ${branchOnTrain}`)
+    }
     return;
   }
 
