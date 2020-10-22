@@ -67,10 +67,12 @@ async function checkoutNewBranch(sg, newBranch){
   await sg.raw(['checkout', '-b', newBranch]);
 }
 
-function addBranchToYmlConfig(trainKey, branchName, ymlConfig) {
+async function addCurrentBranchToYmlConfig(sg, trainKey, ymlConfig) {
+  const branches = await sg.branchLocal();
+  const currentBranch = branches.current;
   const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig))
-  const branchNames = newYmlConfig[trainKey]
-  branchNames.push(branchName)
+  const branchConfigs = newYmlConfig.trains[trainKey]
+  branchConfigs.push(currentBranch)
   return newYmlConfig
 }
 
@@ -104,11 +106,11 @@ async function loadConfig(sg) {
 
 /**
  * @param {simpleGit.SimpleGit} sg
- * @return {Promise.<{trains: Array.<TrainCfg>}>}
+ * @param {trains: Array.<TrainCfg>} sg
  */
 async function saveConfig(sg, ymlConfig) {
   const path = await getConfigPath(sg);
-  return fs.writeFileSync(path, yaml.safeDump(ymlConfig))
+  fs.writeFileSync(path, yaml.safeDump(ymlConfig))
 }
 
 /**
@@ -270,7 +272,8 @@ async function main() {
   }
 
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
-  const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
+  const currentTrainKey = await getCurrentTrainKey(sg, ymlConfig);
+  const trainCfg = ymlConfig.trains[currentTrainKey];
   if (!trainCfg) {
     console.log(`Current branch ${currentBranch} is not a train branch.`);
     process.exit(1);
@@ -332,7 +335,7 @@ async function main() {
   if (program.newBranch) {
     const currentTrainKey = await getCurrentTrainKey(sg, ymlConfig);
     await checkoutNewBranch(sg, program.newBranch)
-    const newYmlConfig = addBranchToYmlConfig(currentTrainKey, program.newBranch, ymlConfig);
+    const newYmlConfig = await addCurrentBranchToYmlConfig(sg, currentTrainKey, ymlConfig);
     await saveConfig(newYmlConfig)
     return;
   }
