@@ -63,6 +63,27 @@ async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
+async function checkoutNewBranch(sg, newBranch){
+  await sg.raw(['checkout', '-b', newBranch]);
+}
+
+async function addNewBranchToTrain(sg, ymlConfig, newBranch){
+  const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
+  if (!trainCfg) {
+    console.log(`Current branch ${currentBranch} is not a train branch.`);
+    process.exit(1);
+  }
+  
+  await sg.raw(['checkout', '-b', newBranch]);
+  const currentBranch = newBranch
+}
+
+async function insertBranchNameIntoTrainConfig(sg, trainKey, branchName, ymlConfig) {
+  const branchNames = ymlConfig[trainKey]
+  branchNames.push(branchName)
+  saveConfig(sg, ymlConfig)
+}
+
 async function getUnmergedBranches(sg, branches) {
   const mergedBranchesOutput = await sg.raw(['branch', '--merged', 'master']);
   const mergedBranches = mergedBranchesOutput
@@ -92,6 +113,15 @@ async function loadConfig(sg) {
 }
 
 /**
+ * @param {simpleGit.SimpleGit} sg
+ * @return {Promise.<{trains: Array.<TrainCfg>}>}
+ */
+async function saveConfig(sg, ymlConfig) {
+  const path = await getConfigPath(sg);
+  return fs.writeFileSync(path, yaml.safeDump(ymlConfig))
+}
+
+/**
  * @param {BranchCfg} branchCfg
  */
 function getBranchName(branchCfg) {
@@ -114,6 +144,24 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
     return branchNames.indexOf(currentBranch) >= 0;
   });
   return key && trains[key];
+}
+
+/**
+ * @return {Promise.<String>}
+ */
+async function getCurrentTrainKey(sg, config) {
+  const branches = await sg.branchLocal();
+  const currentBranch = branches.current;
+  const { trains } = config;
+  if (!trains) {
+    return null;
+  }
+  const key = Object.keys(trains).find(trainKey => {
+    const branches = trains[trainKey];
+    const branchNames = branches.map(b => getBranchName(b));
+    return branchNames.indexOf(currentBranch) >= 0;
+  });
+  return key;
 }
 
 /**
@@ -288,6 +336,13 @@ async function main() {
   if (program.createPrs) {
     await findAndPushBranches();
     await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, program.remote);
+    return;
+  }
+  
+  if (program.newBranch) {
+    const currentTrainKey = await getCurrentTrainKey(sg, ymlConfig);
+    await sg.raw(['checkout', '-b', program.newBranch]);
+    insertBranchNameIntoTrainConfig(sg, currentTrainKey, program.newBranch, ymlConfig);
     return;
   }
 
