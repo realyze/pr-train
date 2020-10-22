@@ -171,7 +171,8 @@ async function main() {
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-    .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
+    .option('-c, --create-prs', 'Create GitHub PRs from your train branches')
+    .option('-n <branch>, --new-branch <branch>', 'Create a new branch in current train');
 
   program.on('--help', () => {
     console.log('');
