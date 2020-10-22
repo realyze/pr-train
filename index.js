@@ -67,21 +67,11 @@ async function checkoutNewBranch(sg, newBranch){
   await sg.raw(['checkout', '-b', newBranch]);
 }
 
-async function addNewBranchToTrain(sg, ymlConfig, newBranch){
-  const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
-  if (!trainCfg) {
-    console.log(`Current branch ${currentBranch} is not a train branch.`);
-    process.exit(1);
-  }
-  
-  await sg.raw(['checkout', '-b', newBranch]);
-  const currentBranch = newBranch
-}
-
-async function insertBranchNameIntoTrainConfig(sg, trainKey, branchName, ymlConfig) {
-  const branchNames = ymlConfig[trainKey]
+function addBranchToYmlConfig(trainKey, branchName, ymlConfig) {
+  const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig))
+  const branchNames = newYmlConfig[trainKey]
   branchNames.push(branchName)
-  saveConfig(sg, ymlConfig)
+  return newYmlConfig
 }
 
 async function getUnmergedBranches(sg, branches) {
@@ -341,8 +331,9 @@ async function main() {
   
   if (program.newBranch) {
     const currentTrainKey = await getCurrentTrainKey(sg, ymlConfig);
-    await sg.raw(['checkout', '-b', program.newBranch]);
-    insertBranchNameIntoTrainConfig(sg, currentTrainKey, program.newBranch, ymlConfig);
+    await checkoutNewBranch(sg, program.newBranch)
+    const newYmlConfig = addBranchToYmlConfig(currentTrainKey, program.newBranch, ymlConfig);
+    await saveConfig(newYmlConfig)
     return;
   }
 
