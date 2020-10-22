@@ -218,7 +218,7 @@ async function main() {
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
     .option('-c, --create-prs', 'Create GitHub PRs from your train branches')
-    .option('-n, --new-branch <branch>', 'Create a new branch in current train');
+    .option('-n, --new-branch <branch>', 'Create a new branch to the train and place it after the current branch');
 
   program.on('--help', () => {
     console.log('');
@@ -328,14 +328,6 @@ async function main() {
     }
     pushBranches(sg, branchesToPush, program.force, program.remote);
   }
-
-  // If we're creating PRs, don't combine branches (that might change branch HEADs and consequently
-  // the PR titles and descriptions). Just push and create the PRs.
-  if (program.createPrs) {
-    await findAndPushBranches();
-    await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, program.remote);
-    return;
-  }
   
   if (program.newBranch) {
     const trainKey = getKeyOfTrain(trainCfg, ymlConfig);
@@ -347,6 +339,14 @@ async function main() {
       await saveConfig(sg, newYmlConfig);
       console.log(`${program.newBranch} added to the train after ${currentBranch}`)
     }
+    return;
+  }
+
+  // If we're creating PRs, don't combine branches (that might change branch HEADs and consequently
+  // the PR titles and descriptions). Just push and create the PRs.
+  if (program.createPrs) {
+    await findAndPushBranches();
+    await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, program.remote);
     return;
   }
 
