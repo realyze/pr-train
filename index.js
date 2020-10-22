@@ -68,13 +68,13 @@ async function checkoutNewBranch(sg, newBranch){
 }
 
 async function addCurrentBranchToYmlConfig(sg, trainCfg, ymlConfig) {
-  const trainKey = ymlConfig.trains.indexOf(trainCfg)
+  const trainKey = ymlConfig.trains.indexOf(trainCfg);
   const branches = await sg.branchLocal();
   const currentBranch = branches.current;
-  const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig))
-  const branchConfigs = newYmlConfig.trains[trainKey]
-  branchConfigs.push(currentBranch)
-  return newYmlConfig
+  const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig));
+  const branchConfigs = newYmlConfig.trains[trainKey];
+  branchConfigs.push(currentBranch);
+  return newYmlConfig;
 }
 
 async function getUnmergedBranches(sg, branches) {
@@ -333,9 +333,9 @@ async function main() {
   }
   
   if (program.newBranch) {
-    await checkoutNewBranch(sg, program.newBranch)
+    await checkoutNewBranch(sg, program.newBranch);
     const newYmlConfig = await addCurrentBranchToYmlConfig(sg, trainCfg, ymlConfig);
-    await saveConfig(newYmlConfig)
+    await saveConfig(newYmlConfig);
     return;
   }
 
