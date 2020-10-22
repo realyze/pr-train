@@ -140,24 +140,6 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
 }
 
 /**
- * @return {Promise.<String>}
- */
-async function getCurrentTrainKey(sg, config) {
-  const branches = await sg.branchLocal();
-  const currentBranch = branches.current;
-  const { trains } = config;
-  if (!trains) {
-    return null;
-  }
-  const key = Object.keys(trains).find(trainKey => {
-    const branches = trains[trainKey];
-    const branchNames = branches.map(b => getBranchName(b));
-    return branchNames.indexOf(currentBranch) >= 0;
-  });
-  return key;
-}
-
-/**
  * @param {Array.<BranchCfg>} branchConfig
  */
 function getBranchesInCurrentTrain(branchConfig) {
