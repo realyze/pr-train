@@ -17,7 +17,7 @@ Install with `npm i -g git-pr-train`.
 
 Run `git pr-train --init` in your repo root to generate a `.pr-train.yml` file (don't forget to gitignore).
 
-Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell pr-train which branches form the chain and you're good to go.
+Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell pr-train which branches form the chain, and you're good to go.
 
 ### Basic usage examples
 
@@ -29,11 +29,11 @@ Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell 
 
 **Pre-requisite**: Create a `${HOME}/.pr-train` file with a single line which is your GH personal access token (you can create one [here](https://github.com/settings/tokens)). The `repo` scope, with ` Full control of private repositories` is needed.
 
-Run `git pr-train -p --create-prs` to create GitHub PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be promted before the PRs are created.
+Run `git pr-train -p --create-prs` to create GitHub PRs with a "content table" section. PR titles are taken from the commit message titles of each branch HEAD. You'll be prompted before the PRs are created.
 
 If you run with `--create-prs` again, `pr-train` will only override the Table of Contents in your PR, it will _not_ change the rest of the PR descriptions.
 
-**Pro-tip**: If you want to udpate the ToCs in your GitHub PRs, just update the PR titles and re-run pr train with `--create-prs` - it will do the right thing.
+**Pro-tip**: If you want to update the ToCs in your GitHub PRs, just update the PR titles and re-run pr train with `--create-prs` - it will do the right thing.
 
 ## Example with explanation
 
@@ -47,7 +47,7 @@ That's what we call that a _PR train_.
 
 If you modify a branch (or e.g. merge/rebase `fred_billing-refactor_frontend_bits` on top of `master`), you'll want all the other branches to receive the change. `git pr-train` does that by merging (or rebasing) each branch into their child branch (i.e., branch 1 into branch 2, branch 2 into branch 3 etc).
 
-If you wish, it also makes sure there is a "combined" branch (which contains the code of all subbranches and you can build it and run tests on it - please see the `Chained PR workflows` section below).
+If you wish, it also makes sure there is a "combined" branch (which contains the code of all subbranches, and you can build it and run tests on it - please see the `Chained PR workflows` section below).
 
 Now everytime you make a change to any branch in the train, run `git pr-train -p` to merge and push branches or `git pr-train -rpf` to rebase branches and force-push (if you prefer rebasing).
 
@@ -101,7 +101,7 @@ trains:
   # ...config for older trains follows...
 ```
 
-Unlike the sub-branches, the combined branch doesn't need to exist when you run the command; `pr-train` will make sure it's created and it points to the last sub-branch in the train. Just make sure it's listed as the last branch in the train config.
+Unlike the sub-branches, the combined branch doesn't need to exist when you run the command; `pr-train` will make sure it's created, and it points to the last sub-branch in the train. Just make sure it's listed as the last branch in the train config.
 
 ## Running PR train
 
