@@ -76,7 +76,7 @@ If you want to merge your branches one by one from the "bottom" as they get LGTM
 1.  Merge the LGTM'd branch into `master`
 2.  Merge `master` into next train branch (or rebase that branch on top of `master`)
 3.  Change the GitHub PR base to `master` so that the diff only contains the expected changes
-4.  Delete then merged branch from `.pr-train.yml`
+4.  Delete the merged branch from `.pr-train.yml`
 5.  Run `git pr-train` to propagate the changes through the train
 
 Note that steps 1-3 are not pr-train specific, that's just how one-by-one workflow generally works.
