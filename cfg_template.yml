@@ -1,3 +1,7 @@
+prs:
+  # Change this if you use a different name for your default branch (e.g. main)
+  main-branch-name: master
+
 trains:
   # This is an example. This PR train would have 4 branches plus 1 "combined" branch to run tests etc on.
   #

@@ -108,3 +108,28 @@ Unlike the sub-branches, the combined branch doesn't need to exist when you run 
 Run `git pr-train` in your working dir when you're on any branch that belongs to a PR train. You don't have to be on the first branch, any branch will do. Use `-r/--rebase` option if you'd like to rebase branches on top of each other rather than merge (note: you will have to push with `git pr-train -pf` in that case).
 
 `git pr-train -p` will merge/rebase and push your updated changes to remote `origin` (configurable via `--remote` option).
+
+## No master? No problem!
+
+_All your base are belong to us._ - CATS
+
+Are you working in a repository that doesn't use `master` as the main (default) branch? 
+For example, newer repos use `main` instead. 
+Or do you have a different branch that you want all PR trains to use as a base?
+
+Add a section to the top of the config like so:
+
+```yml
+prs:
+  main-branch-name: main
+
+trains:
+  # existing train config
+```
+
+### Override the base branch when creating PRs
+
+You can override the base branch to use when creating PRs by passing the `--base <branch-name>`. This takes precedence 
+over the main branch specified in the config file.
+
+e.g. `git pr-train -p -c -b feat/my-feature-base`

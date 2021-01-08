@@ -2,9 +2,11 @@
 const octo = require('octonode');
 const promptly = require('promptly');
 const {
-  DEFAULT_REMOTE
+  DEFAULT_REMOTE,
+  DEFAULT_MAIN_BRANCH
 } = require('./consts');
 const fs = require('fs');
+const get = require('lodash/get');
 const colors = require('colors');
 const emoji = require('node-emoji');
 const simpleGit = require('simple-git/promise');
@@ -74,14 +76,35 @@ function upsertNavigationInBody(newNavigation, body) {
   }
 }
 
+function checkAndReportInvalidBaseError(e, base) {
+  const { field, code } = get(e, 'body.errors[0]', {});
+  if (field === 'base' && code === 'invalid') {
+    console.log([
+      emoji.get('no_entry'),
+      `\n${emoji.get('confounded')} This is embarrassing. `,
+      `The base branch of ${base.bold} doesn't seem to exist on the remote.`,
+      `\nDid you forget to ${emoji.get('arrow_up')}  push it?`,
+    ].join(''));
+    return true;
+  }
+  return false;
+}
+
 /**
  *
  * @param {simpleGit.SimpleGit} sg
  * @param {Array.<string>} allBranches
  * @param {string} combinedBranch
  * @param {string} remote
+ * @param {string} baseBranch
  */
-async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_REMOTE) {
+async function ensurePrsExist({
+  sg,
+  allBranches,
+  combinedBranch,
+  remote = DEFAULT_REMOTE,
+  baseBranch = DEFAULT_MAIN_BRANCH
+}) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());
   // TODO: take remote name from `-r` value.
@@ -145,7 +168,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
       title,
       body
     } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
-    const base = index === 0 || branch === combinedBranch ? 'master' : allBranches[index - 1];
+    const base = index === 0 || branch === combinedBranch ? baseBranch : allBranches[index - 1];
     process.stdout.write(`Checking if PR for branch ${branch} already exists... `);
     const prs = await ghRepo.prsAsync({
       head: `${nick}:${branch}`,
@@ -163,11 +186,14 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
         title,
         body,
       };
-      process.stdout.write(`Creating PR for branch "${branch}"...`);
+      const baseMessage = base === baseBranch ? colors.dim(` (against ${base})`) : '';
+      process.stdout.write(`Creating PRs for branch "${branch}"${baseMessage}...`);
       try {
         prResponse = (await ghRepo.prAsync(payload))[0];
       } catch (e) {
-        console.error(JSON.stringify(e, null, 2));
+        if (!checkAndReportInvalidBaseError(e, base)) {
+          console.error(JSON.stringify(e, null, 2));
+        }
         throw e;
       }
       console.log(emoji.get('white_check_mark'));
