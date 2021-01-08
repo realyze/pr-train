@@ -69,10 +69,11 @@ function readGHKey() {
  * @param {string} body
  */
 function upsertNavigationInBody(newNavigation, body) {
+  body = body || '';
   if (body.match(/<pr-train-toc>/)) {
     return body.replace(/<pr-train-toc>[^]*<\/pr-train-toc>/, newNavigation);
   } else {
-    return body + '\n' + newNavigation;
+    return (body ? body + '\n' : '') + newNavigation;
   }
 }
 
