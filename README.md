@@ -38,7 +38,7 @@ If you run with `--create-prs` again, `pr-train` will only override the Table of
 ### Draft PRs
 
 To create PRs in draft mode ([if your repo allows](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests)),
-pass the `-d` or `--draft` argument on the command line (instead of, or in addition to, `-c`/`--create-prs`).
+pass the `-d` or `--draft` argument on the command line (in addition to `-c`/`--create-prs`).
 
 You can also configure PRs to be created in draft mode by default if you add the following section to your `.pr-train.yml` file:
 
