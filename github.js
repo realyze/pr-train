@@ -156,7 +156,7 @@ async function ensurePrsExist({
     process.exit(0);
   }
 
-  const nickAndRepo = remoteUrl.match(/github\.com[/:](.*)\.git/)[1];
+  const nickAndRepo = remoteUrl.match(/github\.com[/:](.*)/)[1].replace(/\.git$/, '');
   if (!nickAndRepo) {
     console.log(`I could not parse your remote ${remote} repo URL`.red);
     process.exit(4);
