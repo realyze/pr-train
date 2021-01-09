@@ -101,7 +101,7 @@ function checkAndReportInvalidBaseError(e, base) {
  * @param {boolean} draft
  * @param {string} remote
  * @param {string} baseBranch
- * @param {'text'|'table'} format
+ * @param {boolean} printLinks
  */
 async function ensurePrsExist({
   sg,
@@ -110,6 +110,7 @@ async function ensurePrsExist({
   draft,
   remote = DEFAULT_REMOTE,
   baseBranch = DEFAULT_BASE_BRANCH,
+  printLinks = false
 }) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());
@@ -234,11 +235,12 @@ async function ensurePrsExist({
     const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
     const newBody = upsertNavigationInBody(navigation, body);
     process.stdout.write(`Updating PR for branch ${branch}...`);
-    await ghPr.updateAsync({
+    const updateResponse = await ghPr.updateAsync({
       title,
       body: `${newBody}`,
     });
-    console.log(emoji.get('white_check_mark'));
+    const prLink = get(updateResponse, '0._links.html.href', colors.yellow('Could not get URL'));
+    console.log(emoji.get('white_check_mark') + printLinks ? ` (${prLink})` : '');
   }, Promise.resolve());
 }
 

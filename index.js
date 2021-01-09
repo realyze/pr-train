@@ -326,6 +326,7 @@ async function main() {
       remote: program.remote,
       draft,
       baseBranch,
+      printLinks: getConfigOption(ymlConfig, 'prs.print-urls'),
     });
     return;
   }

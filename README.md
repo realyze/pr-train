@@ -150,3 +150,8 @@ You can override the base branch to use when creating PRs by passing the `--base
 over the main branch specified in the config file.
 
 e.g. `git pr-train -p -c -b feat/my-feature-base`
+
+## Print the PR links to the terminal
+
+To have the command output include a link to the PR that was created or updated,
+simply add `print-urls: true` to the `prs` section of the config file.
