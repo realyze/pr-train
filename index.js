@@ -80,9 +80,8 @@ async function getConfigPath(sg) {
 
 /**
  * @typedef {string | Object.<string, { combined: boolean, initSha?: string }>} BranchCfg
- * @typedef {{ mainBranch?: string, 'main-branch'?: string }} PrsCfg
  * @typedef {Object.<string, Array.<string | BranchCfg>>} TrainCfg
- * @typedef {{ prs?: PrsCfg, trains: Array.<TrainCfg>}} YamlCfg
+ * @typedef {{ prs?: Object, trains: Array.<TrainCfg>}} YamlCfg
  */
 
 /**
