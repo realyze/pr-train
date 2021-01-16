@@ -63,6 +63,30 @@ async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
+async function checkoutNewBranch(sg, newBranch){
+  try {
+    await sg.raw(['checkout', '-b', newBranch]);
+  } catch (e) {
+    console.log(`${newBranch} is an existing branch... Checking out`)
+    await sg.raw(['checkout', newBranch]);
+  }
+}
+
+async function addCurrentBranchToYmlConfig(sg, atIndex, trainKey, ymlConfig) {  
+  const branches = await sg.branchLocal();
+  const currentBranch = branches.current;
+  const { trains } = ymlConfig;
+  if (trains[trainKey].indexOf(currentBranch) >=0) {
+    console.log(`${currentBranch} is already in this train`)
+    return null
+  } else {
+    const newYmlConfig = JSON.parse(JSON.stringify(ymlConfig));
+    const branchConfigs = newYmlConfig.trains[trainKey];
+    branchConfigs.splice(atIndex, 0, currentBranch);
+    return newYmlConfig;
+  }
+}
+
 async function getUnmergedBranches(sg, branches) {
   const mergedBranchesOutput = await sg.raw(['branch', '--merged', 'master']);
   const mergedBranches = mergedBranchesOutput
@@ -89,6 +113,15 @@ async function getConfigPath(sg) {
 async function loadConfig(sg) {
   const path = await getConfigPath(sg);
   return yaml.safeLoad(fs.readFileSync(path, 'utf8'));
+}
+
+/**
+ * @param {simpleGit.SimpleGit} sg
+ * @param {trains: Array.<TrainCfg>} sg
+ */
+async function saveConfig(sg, ymlConfig) {
+  const path = await getConfigPath(sg);
+  fs.writeFileSync(path, yaml.safeDump(ymlConfig))
 }
 
 /**
@@ -122,7 +155,20 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
 function getBranchesInCurrentTrain(branchConfig) {
   return branchConfig.map(b => getBranchName(b));
 }
+/**
+ * @param {Array.<BranchCfg>} branchConfig
+ */
+async function getCurrentBranchIndex(sg, trainCfg) {
+  const branches = await sg.branchLocal();
+  return trainCfg.map(b => getBranchName(b)).indexOf(branches.current);
+}
 
+function getKeyOfTrain(trainCgf, ymlConfig) {
+  const { trains } = ymlConfig;
+  return Object.keys(trains).find(trainKey => {
+    return trains[trainKey] === trainCgf;
+  });
+}
 /**
  * @param {Array.<BranchCfg>} branchConfig
  */
@@ -171,7 +217,8 @@ async function main() {
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-    .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
+    .option('-c, --create-prs', 'Create GitHub PRs from your train branches')
+    .option('-n, --new-branch <branch>', 'Create a new branch to the train and place it after the current branch');
 
   program.on('--help', () => {
     console.log('');
@@ -280,6 +327,19 @@ async function main() {
       }
     }
     pushBranches(sg, branchesToPush, program.force, program.remote);
+  }
+  
+  if (program.newBranch) {
+    const trainKey = getKeyOfTrain(trainCfg, ymlConfig);
+    const currentBranchIndex = await getCurrentBranchIndex(sg, trainCfg);
+    const newBranchIndex = currentBranchIndex + 1;
+    await checkoutNewBranch(sg, program.newBranch);
+    const newYmlConfig = await addCurrentBranchToYmlConfig(sg, newBranchIndex, trainKey, ymlConfig);
+    if (newYmlConfig) {
+      await saveConfig(sg, newYmlConfig);
+      console.log(`${program.newBranch} added to the train after ${currentBranch}`)
+    }
+    return;
   }
 
   // If we're creating PRs, don't combine branches (that might change branch HEADs and consequently
