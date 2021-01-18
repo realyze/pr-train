@@ -9,7 +9,12 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 const { ensurePrsExist, readGHKey, checkGHKeyExists } = require('./github');
 const colors = require('colors');
-const { DEFAULT_REMOTE, DEFAULT_BASE_BRANCH, MERGE_STEP_DELAY_MS, MERGE_STEP_DELAY_WAIT_FOR_LOCK } = require('./consts');
+const {
+  DEFAULT_REMOTE,
+  DEFAULT_BASE_BRANCH,
+  MERGE_STEP_DELAY_MS,
+  MERGE_STEP_DELAY_WAIT_FOR_LOCK,
+} = require('./consts');
 const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
@@ -130,7 +135,7 @@ function getBranchesInCurrentTrain(branchConfig) {
  */
 function getCombinedBranch(branchConfig) {
   const combinedBranch = /** @type {Object<string, {combined: boolean}>} */ branchConfig.find(cfg => {
-    if (typeof cfg === 'string') {
+    if (!cfg || typeof cfg === 'string') {
       return false;
     }
     const branchName = Object.keys(cfg)[0];
@@ -223,6 +228,8 @@ async function main() {
     .option('--push-merged', 'Push all branches (including those that have already been merged into the base branch)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
     .option('-b, --base <base>', `Specify the base branch to use for the first and combined PRs.`, defaultBase)
+    .option('-d, --draft', 'Create PRs in draft mode. Implies --create-prs.')
+    .option('--no-draft', 'Do not create PRs in draft mode. Implies --create-prs.')
     .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
 
   program.on('--help', () => {
@@ -249,9 +256,17 @@ async function main() {
 
   program.parse(process.argv);
 
-  program.createPrs && checkGHKeyExists();
+  const createPrs = program.draft != null || program.createPrs;
+
+  createPrs && checkGHKeyExists();
 
   const baseBranch = program.base; // will have default value if one is not supplied
+
+  // if there is no `-d`/`--draft`/`--no-draft` option specified, try to extract it from the config file
+  const draft = program.draft != null
+    ? program.draft
+    : !!getConfigOption(ymlConfig, 'prs.draft-by-default');
+
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
   const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
   if (!trainCfg) {
@@ -306,13 +321,14 @@ async function main() {
 
   // If we're creating PRs, don't combine branches (that might change branch HEADs and consequently
   // the PR titles and descriptions). Just push and create the PRs.
-  if (program.createPrs) {
+  if (createPrs) {
     await findAndPushBranches();
     await ensurePrsExist({
       sg,
       allBranches: sortedTrainBranches,
       combinedBranch: combinedTrainBranch,
       remote: program.remote,
+      draft,
       baseBranch,
     });
     return;

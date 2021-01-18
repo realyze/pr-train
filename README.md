@@ -35,6 +35,23 @@ If you run with `--create-prs` again, `pr-train` will only override the Table of
 
 **Pro-tip**: If you want to udpate the ToCs in your GitHub PRs, just update the PR titles and re-run pr train with `--create-prs` - it will do the right thing.
 
+### Draft PRs
+
+To create PRs in draft mode ([if your repo allows](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests)),
+pass the `-d` or `--draft` argument on the command line (instead of, or in addition to, `-c`/`--create-prs`).
+
+You can also configure PRs to be created in draft mode by default if you add the following section to your `.pr-train.yml` file:
+
+```yaml
+prs:
+  draft-by-default: true
+
+trains:
+  # etc
+```
+
+Specifying this option will allow you to omit the `-d`/`--draft` parameter (though you still need to specify `-c`/`--create-prs`) when you want to create/update PRs.
+
 ## Example with explanation
 
 You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. As a good citizen, you want to split the diff into multiple PRs, e.g.:

@@ -95,6 +95,7 @@ function checkAndReportInvalidBaseError(e, base) {
  * @param {simpleGit.SimpleGit} sg
  * @param {Array.<string>} allBranches
  * @param {string} combinedBranch
+ * @param {boolean} draft
  * @param {string} remote
  * @param {string} baseBranch
  */
@@ -102,6 +103,7 @@ async function ensurePrsExist({
   sg,
   allBranches,
   combinedBranch,
+  draft,
   remote = DEFAULT_REMOTE,
   baseBranch = DEFAULT_BASE_BRANCH
 }) {
@@ -131,8 +133,10 @@ async function ensurePrsExist({
     body: '',
   });
 
+  const prText = draft ? 'draft PR' : 'PR';
+
   console.log();
-  console.log('This will create (or update) PRs for the following branches:');
+  console.log(`This will create (or update) ${prText}s for the following branches:`);
   await allBranches.reduce(async (memo, branch) => {
     await memo;
     const {
@@ -185,9 +189,10 @@ async function ensurePrsExist({
         base,
         title,
         body,
+        draft,
       };
       const baseMessage = base === baseBranch ? colors.dim(` (against ${base})`) : '';
-      process.stdout.write(`Creating PRs for branch "${branch}"${baseMessage}...`);
+      process.stdout.write(`Creating ${prText} for branch "${branch}"${baseMessage}...`);
       try {
         prResponse = (await ghRepo.prAsync(payload))[0];
       } catch (e) {
