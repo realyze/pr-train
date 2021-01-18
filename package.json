@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "colors": "^1.2.1",
-    "commander": "^2.15.0",
+    "commander": "^3.0.2",
     "figlet": "^1.2.0",
     "inquirer": "^6.2.1",
     "js-yaml": "^3.13.1",

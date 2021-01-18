@@ -217,7 +217,7 @@ async function main() {
   }
 
   const defaultBase = getConfigOption(ymlConfig, 'prs.main-branch-name') || DEFAULT_BASE_BRANCH;
-  const draftByDefault = getConfigOption(ymlConfig, 'prs.draft-by-default');
+  const draftByDefault = !!getConfigOption(ymlConfig, 'prs.draft-by-default');
 
   program
     .version(package.version)
@@ -228,13 +228,10 @@ async function main() {
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (including those that have already been merged into the base branch)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-    .option('-b, --base <base>', `Specify the base branch to use for the first and combined PRs.`, defaultBase);
-  if (draftByDefault) {
-    program.option('--no-draft', 'Do not create PRs in draft mode (override default)');
-  } else {
-    program.option('-d, --draft', 'Create PRs in draft mode')
-  }
-  program.option('-c, --create-prs', 'Create GitHub PRs from your train branches');
+    .option('-b, --base <base>', `Specify the base branch to use for the first and combined PRs.`, defaultBase)
+    .option('-d, --draft', 'Create PRs in draft mode', draftByDefault)
+    .option('--no-draft', 'Do not create PRs in draft mode', !draftByDefault)
+    .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
 
   program.on('--help', () => {
     console.log('');
