@@ -12,6 +12,7 @@ const colors = require('colors');
 const {
   DEFAULT_REMOTE,
   DEFAULT_BASE_BRANCH,
+  DEFAULT_FORMAT,
   MERGE_STEP_DELAY_MS,
   MERGE_STEP_DELAY_WAIT_FOR_LOCK,
 } = require('./consts');
@@ -326,6 +327,7 @@ async function main() {
       remote: program.remote,
       draft,
       baseBranch,
+      format: getConfigOption(ymlConfig, 'prs.toc-format') || DEFAULT_FORMAT,
     });
     return;
   }

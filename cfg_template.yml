@@ -6,6 +6,9 @@ prs:
   # (including CODEOWNERS) until you are ready. This option can be overridden on the command line using the
   # -d/--draft  or --no-draft options, which set draft mode to true or false, respectively.
   # draft-by-default: true
+  #
+  # Specify the format for the Table of Contents in each PR. Either `text` (default) or `table`
+  # toc-format: table
 
 trains:
   # This is an example. This PR train would have 4 branches plus 1 "combined" branch to run tests etc on.
