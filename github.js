@@ -240,7 +240,7 @@ async function ensurePrsExist({
       body: `${newBody}`,
     });
     const prLink = get(updateResponse, '0._links.html.href', colors.yellow('Could not get URL'));
-    console.log(emoji.get('white_check_mark') + printLinks ? ` (${prLink})` : '');
+    console.log(emoji.get('white_check_mark') + (printLinks ? ` (${prLink})` : ''));
   }, Promise.resolve());
 }
 
