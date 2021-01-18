@@ -32,30 +32,19 @@ async function constructPrMsg(sg, branch) {
  * @param {Object.<string, {title: string, pr: number}>} branchToPrDict
  * @param {string} currentBranch
  * @param {string} combinedBranch
- * @param {'text'|'table'} format
  */
-function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch, format) {
+function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch) {
   let contents = '<pr-train-toc>\n\n';
   let tableData = [['', 'PR', 'Description']];
   Object.keys(branchToPrDict).forEach((branch) => {
     const maybeHandRight = branch === currentBranch ? '👉 ' : ' ';
-    const maybeHandLeft = branch === currentBranch ? ' 👈 **YOU ARE HERE**' : '';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
     const prTitle = branchToPrDict[branch].title.trim();
     const prNumber = `#${branchToPrDict[branch].pr}`;
-    const prInfo = format === 'text'
-      ? `${combinedInfo}(${prTitle})`
-      : `${combinedInfo}${prTitle}`.trim();
-    const parts = [maybeHandRight, prNumber, prInfo, format === 'text' && maybeHandLeft].filter(Boolean);
-    if (format === 'text') {
-      contents += parts.join('') + '\n';
-    } else {
-      tableData.push(parts);
-    }
+    const prInfo = `${combinedInfo}${prTitle}`.trim();
+    tableData.push([maybeHandRight, prNumber, prInfo]);
   });
-  if (format === 'table') {
-    contents += table(tableData, { stringLength: width }) + '\n';
-  }
+  contents += table(tableData, { stringLength: width }) + '\n';
   contents += '\n</pr-train-toc>'
   return contents;
 }
@@ -121,7 +110,6 @@ async function ensurePrsExist({
   draft,
   remote = DEFAULT_REMOTE,
   baseBranch = DEFAULT_BASE_BRANCH,
-  format= 'text'
 }) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());
@@ -243,7 +231,7 @@ async function ensurePrsExist({
       branch === combinedBranch ?
       getCombinedBranchPrMsg() :
       await constructPrMsg(sg, branch);
-    const navigation = constructTrainNavigation(prDict, branch, combinedBranch, format);
+    const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
     const newBody = upsertNavigationInBody(navigation, body);
     process.stdout.write(`Updating PR for branch ${branch}...`);
     await ghPr.updateAsync({

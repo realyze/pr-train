@@ -150,32 +150,3 @@ You can override the base branch to use when creating PRs by passing the `--base
 over the main branch specified in the config file.
 
 e.g. `git pr-train -p -c -b feat/my-feature-base`
-
-## Formatting the Table of Contents as an actual table
-
-If you would prefer that the Table of Contents use an actual markdown table format instead, 
-simply set `prs.toc-format` in the `.pr-train.yml` file to be `table`.
-
-e.g. 
-
-```yml
-prs:
-  # other config
-  toc-format: table
-
-trains:
-  # existing train config
-```
-
-This will yield something like the following:
-
-|     | PR  | Description |
-| --- | --- | ----------- | 
-|     | #1  | Foo         |
-| 👉  | #17 | Bar         |
-|     | #3  | Baz         |
-|     | #4  | Qux         |
-|     | #5  | Quux        |
-
-
-
