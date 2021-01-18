@@ -217,6 +217,7 @@ async function main() {
   }
 
   const defaultBase = getConfigOption(ymlConfig, 'prs.main-branch-name') || DEFAULT_BASE_BRANCH;
+  const draftByDefault = getConfigOption(ymlConfig, 'prs.draft-by-default');
 
   program
     .version(package.version)
@@ -227,10 +228,13 @@ async function main() {
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (including those that have already been merged into the base branch)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
-    .option('-b, --base <base>', `Specify the base branch to use for the first and combined PRs.`, defaultBase)
-    .option('-d, --draft', 'Create PRs in draft mode. Implies --create-prs.')
-    .option('--no-draft', 'Do not create PRs in draft mode. Implies --create-prs.')
-    .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
+    .option('-b, --base <base>', `Specify the base branch to use for the first and combined PRs.`, defaultBase);
+  if (draftByDefault) {
+    program.option('--no-draft', 'Do not create PRs in draft mode (override default)');
+  } else {
+    program.option('-d, --draft', 'Create PRs in draft mode')
+  }
+  program.option('-c, --create-prs', 'Create GitHub PRs from your train branches');
 
   program.on('--help', () => {
     console.log('');
@@ -256,16 +260,11 @@ async function main() {
 
   program.parse(process.argv);
 
-  const createPrs = program.draft != null || program.createPrs;
-
-  createPrs && checkGHKeyExists();
+  program.createPrs && checkGHKeyExists();
 
   const baseBranch = program.base; // will have default value if one is not supplied
 
-  // if there is no `-d`/`--draft`/`--no-draft` option specified, try to extract it from the config file
-  const draft = program.draft != null
-    ? program.draft
-    : !!getConfigOption(ymlConfig, 'prs.draft-by-default');
+  const draft = program.draft != null ? program.draft : draftByDefault;
 
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
   const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
@@ -321,7 +320,7 @@ async function main() {
 
   // If we're creating PRs, don't combine branches (that might change branch HEADs and consequently
   // the PR titles and descriptions). Just push and create the PRs.
-  if (createPrs) {
+  if (program.createPrs) {
     await findAndPushBranches();
     await ensurePrsExist({
       sg,
