@@ -3,7 +3,7 @@ const octo = require('octonode');
 const promptly = require('promptly');
 const {
   DEFAULT_REMOTE,
-  DEFAULT_MAIN_BRANCH
+  DEFAULT_BASE_BRANCH
 } = require('./consts');
 const fs = require('fs');
 const get = require('lodash/get');
@@ -103,7 +103,7 @@ async function ensurePrsExist({
   allBranches,
   combinedBranch,
   remote = DEFAULT_REMOTE,
-  baseBranch = DEFAULT_MAIN_BRANCH
+  baseBranch = DEFAULT_BASE_BRANCH
 }) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());

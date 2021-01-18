@@ -9,7 +9,7 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 const { ensurePrsExist, readGHKey, checkGHKeyExists } = require('./github');
 const colors = require('colors');
-const { DEFAULT_REMOTE, DEFAULT_MAIN_BRANCH, MERGE_STEP_DELAY_MS, MERGE_STEP_DELAY_WAIT_FOR_LOCK } = require('./consts');
+const { DEFAULT_REMOTE, DEFAULT_BASE_BRANCH, MERGE_STEP_DELAY_MS, MERGE_STEP_DELAY_WAIT_FOR_LOCK } = require('./consts');
 const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
@@ -64,7 +64,7 @@ async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
-async function getUnmergedBranches(sg, branches, baseBranch = DEFAULT_MAIN_BRANCH) {
+async function getUnmergedBranches(sg, branches, baseBranch = DEFAULT_BASE_BRANCH) {
   const mergedBranchesOutput = await sg.raw(['branch', '--merged', baseBranch]);
   const mergedBranches = mergedBranchesOutput
     .split('\n')
@@ -211,7 +211,7 @@ async function main() {
     process.exit(1);
   }
 
-  const defaultBase = getConfigOption(ymlConfig, 'prs.main-branch-name') || DEFAULT_MAIN_BRANCH;
+  const defaultBase = getConfigOption(ymlConfig, 'prs.main-branch-name') || DEFAULT_BASE_BRANCH;
 
   program
     .version(package.version)
