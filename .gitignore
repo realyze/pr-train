@@ -1,1 +1,5 @@
 node_modules
+# Intellij IDE project settings
+.idea
+# Because dogfooding
+.pr-train.yml

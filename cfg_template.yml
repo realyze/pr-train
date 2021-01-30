@@ -1,3 +1,15 @@
+prs:
+  # Uncomment this if you use a different name for your default branch (e.g. "main" instead of "master")
+  # main-branch-name: main
+  #
+  # Uncomment to create new PRs in draft mode by default. This will prevent them from notifying anybody
+  # (including CODEOWNERS) until you are ready. This option can be overridden on the command line using the
+  # -d/--draft  or --no-draft options, which set draft mode to true or false, respectively.
+  # draft-by-default: true
+  #
+  # Print out the links to the terminal for the created/updated PRs (default false)
+  # print-urls: true
+
 trains:
   # This is an example. This PR train would have 4 branches plus 1 "combined" branch to run tests etc on.
   #

@@ -9,12 +9,18 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 const { ensurePrsExist, readGHKey, checkGHKeyExists } = require('./github');
 const colors = require('colors');
-const { DEFAULT_REMOTE, MERGE_STEP_DELAY_MS, MERGE_STEP_DELAY_WAIT_FOR_LOCK } = require('./consts');
+const {
+  DEFAULT_REMOTE,
+  DEFAULT_BASE_BRANCH,
+  MERGE_STEP_DELAY_MS,
+  MERGE_STEP_DELAY_WAIT_FOR_LOCK,
+} = require('./consts');
 const path = require('path');
 // @ts-ignore
 const package = require('./package.json');
 const inquirer = require('inquirer');
 const shelljs = require('shelljs');
+const camelCase = require('lodash/camelCase');
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -63,8 +69,8 @@ async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
 
-async function getUnmergedBranches(sg, branches) {
-  const mergedBranchesOutput = await sg.raw(['branch', '--merged', 'master']);
+async function getUnmergedBranches(sg, branches, baseBranch = DEFAULT_BASE_BRANCH) {
+  const mergedBranchesOutput = await sg.raw(['branch', '--merged', baseBranch]);
   const mergedBranches = mergedBranchesOutput
     .split('\n')
     .map(b => b.trim())
@@ -80,11 +86,12 @@ async function getConfigPath(sg) {
 /**
  * @typedef {string | Object.<string, { combined: boolean, initSha?: string }>} BranchCfg
  * @typedef {Object.<string, Array.<string | BranchCfg>>} TrainCfg
+ * @typedef {{ prs?: Object, trains: Array.<TrainCfg>}} YamlCfg
  */
 
 /**
  * @param {simpleGit.SimpleGit} sg
- * @return {Promise.<{trains: Array.<TrainCfg>}>}
+ * @return {Promise.<YamlCfg>}
  */
 async function loadConfig(sg) {
   const path = await getConfigPath(sg);
@@ -128,7 +135,7 @@ function getBranchesInCurrentTrain(branchConfig) {
  */
 function getCombinedBranch(branchConfig) {
   const combinedBranch = /** @type {Object<string, {combined: boolean}>} */ branchConfig.find(cfg => {
-    if (typeof cfg === 'string') {
+    if (!cfg || typeof cfg === 'string') {
       return false;
     }
     const branchName = Object.keys(cfg)[0];
@@ -161,7 +168,57 @@ async function handleSwitchToBranchCommand(sg, sortedBranches, combinedBranch) {
   process.exit(0);
 }
 
+/**
+ * @param {YamlCfg} ymlConfig
+ * @param {string} path
+ */
+function getConfigOption(ymlConfig, path) {
+  const parts = path.split(/\./g);
+  let ptr = ymlConfig;
+  while (ptr && parts.length) {
+    const part = parts.shift();
+    // cater for both kebab case and camel cased variants of key, just for developer convenience.
+    ptr = part in ptr ? ptr[part] : ptr[camelCase(part)];
+  }
+  return ptr;
+}
+
 async function main() {
+  const sg = simpleGit();
+  if (!(await sg.checkIsRepo())) {
+    console.log('Not a git repo'.red);
+    process.exit(1);
+  }
+
+  // try to create or init the config first so we can read values from it
+  if (process.argv.includes('--init')) {
+    if (fs.existsSync(await getConfigPath(sg))) {
+      console.log('.pr-train.yml already exists');
+      process.exit(1);
+    }
+    const root = path.dirname(require.main.filename);
+    const cfgTpl = fs.readFileSync(`${root}/cfg_template.yml`);
+    fs.writeFileSync(await getConfigPath(sg), cfgTpl);
+    console.log(`Created a ".pr-train.yml" file. Please make sure it's gitignored.`);
+    process.exit(0);
+  }
+
+  let ymlConfig;
+  try {
+    ymlConfig = await loadConfig(sg);
+  } catch (e) {
+    if (e instanceof yaml.YAMLException) {
+      console.log('There seems to be an error in `.pr-train.yml`.');
+      console.log(e.message);
+      process.exit(1);
+    }
+    console.log('`.pr-train.yml` file not found. Please run `git pr-train --init` to create one.'.red);
+    process.exit(1);
+  }
+
+  const defaultBase = getConfigOption(ymlConfig, 'prs.main-branch-name') || DEFAULT_BASE_BRANCH;
+  const draftByDefault = !!getConfigOption(ymlConfig, 'prs.draft-by-default');
+
   program
     .version(package.version)
     .option('--init', 'Creates a .pr-train.yml file with an example configuration')
@@ -169,8 +226,11 @@ async function main() {
     .option('-l, --list', 'List branches in current train')
     .option('-r, --rebase', 'Rebase branches rather than merging them')
     .option('-f, --force', 'Force push to remote')
-    .option('--push-merged', 'Push all branches (inclusing those that have already been merged into master)')
+    .option('--push-merged', 'Push all branches (including those that have already been merged into the base branch)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
+    .option('-b, --base <base>', `Specify the base branch to use for the first and combined PRs.`, defaultBase)
+    .option('-d, --draft', 'Create PRs in draft mode', draftByDefault)
+    .option('--no-draft', 'Do not create PRs in draft mode', !draftByDefault)
     .option('-c, --create-prs', 'Create GitHub PRs from your train branches');
 
   program.on('--help', () => {
@@ -199,36 +259,9 @@ async function main() {
 
   program.createPrs && checkGHKeyExists();
 
-  const sg = simpleGit();
-  if (!(await sg.checkIsRepo())) {
-    console.log('Not a git repo'.red);
-    process.exit(1);
-  }
+  const baseBranch = program.base; // will have default value if one is not supplied
 
-  if (program.init) {
-    if (fs.existsSync(await getConfigPath(sg))) {
-      console.log('.pr-train.yml already exists');
-      process.exit(1);
-    }
-    const root = path.dirname(require.main.filename);
-    const cfgTpl = fs.readFileSync(`${root}/cfg_template.yml`);
-    fs.writeFileSync(await getConfigPath(sg), cfgTpl);
-    console.log(`Created a ".pr-train.yml" file. Please make sure it's gitignored.`);
-    process.exit(0);
-  }
-
-  let ymlConfig;
-  try {
-    ymlConfig = await loadConfig(sg);
-  } catch (e) {
-    if (e instanceof yaml.YAMLException) {
-      console.log('There seems to be an error in `.pr-train.yml`.');
-      console.log(e.message);
-      process.exit(1);
-    }
-    console.log('`.pr-train.yml` file not found. Please run `git pr-train --init` to create one.'.red);
-    process.exit(1);
-  }
+  const draft = program.draft != null ? program.draft : draftByDefault;
 
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
   const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
@@ -273,7 +306,7 @@ async function main() {
   async function findAndPushBranches() {
     let branchesToPush = sortedTrainBranches;
     if (!program.pushMerged) {
-      branchesToPush = await getUnmergedBranches(sg, sortedTrainBranches);
+      branchesToPush = await getUnmergedBranches(sg, sortedTrainBranches, baseBranch);
       const branchDiff = difference(sortedTrainBranches, branchesToPush);
       if (branchDiff.length > 0) {
         console.log(`Not pushing already merged branches: ${branchDiff.join(', ')}`);
@@ -286,7 +319,15 @@ async function main() {
   // the PR titles and descriptions). Just push and create the PRs.
   if (program.createPrs) {
     await findAndPushBranches();
-    await ensurePrsExist(sg, sortedTrainBranches, combinedTrainBranch, program.remote);
+    await ensurePrsExist({
+      sg,
+      allBranches: sortedTrainBranches,
+      combinedBranch: combinedTrainBranch,
+      remote: program.remote,
+      draft,
+      baseBranch,
+      printLinks: getConfigOption(ymlConfig, 'prs.print-urls'),
+    });
     return;
   }
 
@@ -309,6 +350,6 @@ async function main() {
 }
 
 main().catch(e => {
-  console.log(`${emoji.get('x')}  An error occured. Was there a conflict perhaps?`.red);
+  console.log(`${emoji.get('x')}  An error occurred. Was there a conflict perhaps?`.red);
   console.error('error', e);
 });

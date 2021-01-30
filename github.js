@@ -2,12 +2,15 @@
 const octo = require('octonode');
 const promptly = require('promptly');
 const {
-  DEFAULT_REMOTE
+  DEFAULT_REMOTE,
+  DEFAULT_BASE_BRANCH
 } = require('./consts');
 const fs = require('fs');
+const get = require('lodash/get');
 const colors = require('colors');
 const emoji = require('node-emoji');
-const simpleGit = require('simple-git/promise');
+const table = require('markdown-table');
+const width = require('string-width');
 
 /**
  *
@@ -31,17 +34,18 @@ async function constructPrMsg(sg, branch) {
  * @param {string} combinedBranch
  */
 function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch) {
-  let contents = '<pr-train-toc>\n\n#### PR chain:\n';
-  contents = Object.keys(branchToPrDict).reduce((output, branch) => {
-    const maybeHandRight = branch === currentBranch ? '👉 ' : '';
-    const maybeHandLeft = branch === currentBranch ? ' 👈 **YOU ARE HERE**' : '';
+  let contents = '<pr-train-toc>\n\n';
+  let tableData = [['', 'PR', 'Description']];
+  Object.keys(branchToPrDict).forEach((branch) => {
+    const maybeHandRight = branch === currentBranch ? '👉 ' : ' ';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
-    output += `${maybeHandRight}#${branchToPrDict[branch].pr}${combinedInfo}(${branchToPrDict[
-      branch
-    ].title.trim()})${maybeHandLeft}`;
-    return output + '\n';
-  }, contents);
-  contents += '\n</pr-train-toc>';
+    const prTitle = branchToPrDict[branch].title.trim();
+    const prNumber = `#${branchToPrDict[branch].pr}`;
+    const prInfo = `${combinedInfo}${prTitle}`.trim();
+    tableData.push([maybeHandRight, prNumber, prInfo]);
+  });
+  contents += table(tableData, { stringLength: width }) + '\n';
+  contents += '\n</pr-train-toc>'
   return contents;
 }
 
@@ -67,11 +71,26 @@ function readGHKey() {
  * @param {string} body
  */
 function upsertNavigationInBody(newNavigation, body) {
+  body = body || '';
   if (body.match(/<pr-train-toc>/)) {
     return body.replace(/<pr-train-toc>[^]*<\/pr-train-toc>/, newNavigation);
   } else {
-    return body + '\n' + newNavigation;
+    return (body ? body + '\n' : '') + newNavigation;
   }
+}
+
+function checkAndReportInvalidBaseError(e, base) {
+  const { field, code } = get(e, 'body.errors[0]', {});
+  if (field === 'base' && code === 'invalid') {
+    console.log([
+      emoji.get('no_entry'),
+      `\n${emoji.get('confounded')} This is embarrassing. `,
+      `The base branch of ${base.bold} doesn't seem to exist on the remote.`,
+      `\nDid you forget to ${emoji.get('arrow_up')} push it?`,
+    ].join(''));
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -79,9 +98,20 @@ function upsertNavigationInBody(newNavigation, body) {
  * @param {simpleGit.SimpleGit} sg
  * @param {Array.<string>} allBranches
  * @param {string} combinedBranch
+ * @param {boolean} draft
  * @param {string} remote
+ * @param {string} baseBranch
+ * @param {boolean} printLinks
  */
-async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_REMOTE) {
+async function ensurePrsExist({
+  sg,
+  allBranches,
+  combinedBranch,
+  draft,
+  remote = DEFAULT_REMOTE,
+  baseBranch = DEFAULT_BASE_BRANCH,
+  printLinks = false
+}) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
   const octoClient = octo.client(readGHKey());
   // TODO: take remote name from `-r` value.
@@ -108,8 +138,10 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     body: '',
   });
 
+  const prText = draft ? 'draft PR' : 'PR';
+
   console.log();
-  console.log('This will create (or update) PRs for the following branches:');
+  console.log(`This will create (or update) ${prText}s for the following branches:`);
   await allBranches.reduce(async (memo, branch) => {
     await memo;
     const {
@@ -124,7 +156,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     process.exit(0);
   }
 
-  const nickAndRepo = remoteUrl.match(/github\.com[/:](.*)\.git/)[1];
+  const nickAndRepo = remoteUrl.match(/github\.com[/:](.*)/)[1].replace(/\.git$/, '');
   if (!nickAndRepo) {
     console.log(`I could not parse your remote ${remote} repo URL`.red);
     process.exit(4);
@@ -145,7 +177,7 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
       title,
       body
     } = branch === combinedBranch ? getCombinedBranchPrMsg() : await constructPrMsg(sg, branch);
-    const base = index === 0 || branch === combinedBranch ? 'master' : allBranches[index - 1];
+    const base = index === 0 || branch === combinedBranch ? baseBranch : allBranches[index - 1];
     process.stdout.write(`Checking if PR for branch ${branch} already exists... `);
     const prs = await ghRepo.prsAsync({
       head: `${nick}:${branch}`,
@@ -162,12 +194,16 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
         base,
         title,
         body,
+        draft,
       };
-      process.stdout.write(`Creating PR for branch "${branch}"...`);
+      const baseMessage = base === baseBranch ? colors.dim(` (against ${base})`) : '';
+      process.stdout.write(`Creating ${prText} for branch "${branch}"${baseMessage}...`);
       try {
         prResponse = (await ghRepo.prAsync(payload))[0];
       } catch (e) {
-        console.error(JSON.stringify(e, null, 2));
+        if (!checkAndReportInvalidBaseError(e, base)) {
+          console.error(JSON.stringify(e, null, 2));
+        }
         throw e;
       }
       console.log(emoji.get('white_check_mark'));
@@ -199,11 +235,12 @@ async function ensurePrsExist(sg, allBranches, combinedBranch, remote = DEFAULT_
     const navigation = constructTrainNavigation(prDict, branch, combinedBranch);
     const newBody = upsertNavigationInBody(navigation, body);
     process.stdout.write(`Updating PR for branch ${branch}...`);
-    await ghPr.updateAsync({
+    const updateResponse = await ghPr.updateAsync({
       title,
       body: `${newBody}`,
     });
-    console.log(emoji.get('white_check_mark'));
+    const prLink = get(updateResponse, '0._links.html.href', colors.yellow('Could not get URL'));
+    console.log(emoji.get('white_check_mark') + (printLinks ? ` (${prLink})` : ''));
   }, Promise.resolve());
 }
 

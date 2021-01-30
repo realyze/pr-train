@@ -35,6 +35,23 @@ If you run with `--create-prs` again, `pr-train` will only override the Table of
 
 **Pro-tip**: If you want to update the ToCs in your GitHub PRs, just update the PR titles and re-run pr train with `--create-prs` - it will do the right thing.
 
+### Draft PRs
+
+To create PRs in draft mode ([if your repo allows](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests)),
+pass the `-d` or `--draft` argument on the command line (in addition to `-c`/`--create-prs`).
+
+You can also configure PRs to be created in draft mode by default if you add the following section to your `.pr-train.yml` file:
+
+```yaml
+prs:
+  draft-by-default: true
+
+trains:
+  # etc
+```
+
+Specifying this option will allow you to omit the `-d`/`--draft` parameter (though you still need to specify `-c`/`--create-prs`) when you want to create/update PRs.
+
 ## Example with explanation
 
 You finished coding a feature and now you have a patch that is over 1000 SLOCs long. That's a big patch. As a good citizen, you want to split the diff into multiple PRs, e.g.:
@@ -108,3 +125,33 @@ Unlike the sub-branches, the combined branch doesn't need to exist when you run 
 Run `git pr-train` in your working dir when you're on any branch that belongs to a PR train. You don't have to be on the first branch, any branch will do. Use `-r/--rebase` option if you'd like to rebase branches on top of each other rather than merge (note: you will have to push with `git pr-train -pf` in that case).
 
 `git pr-train -p` will merge/rebase and push your updated changes to remote `origin` (configurable via `--remote` option).
+
+## No master? No problem!
+
+_All your base are belong to us._ - CATS
+
+Are you working in a repository that doesn't use `master` as the main (default) branch? 
+For example, newer repos use `main` instead. 
+Or do you have a different branch that you want all PR trains to use as a base?
+
+Add a section to the top of the config like so:
+
+```yml
+prs:
+  main-branch-name: main
+
+trains:
+  # existing train config
+```
+
+### Override the base branch when creating PRs
+
+You can override the base branch to use when creating PRs by passing the `--base <branch-name>`. This takes precedence 
+over the main branch specified in the config file.
+
+e.g. `git pr-train -p -c -b feat/my-feature-base`
+
+## Print the PR links to the terminal
+
+To have the command output include a link to the PR that was created or updated,
+simply add `print-urls: true` to the `prs` section of the config file.
