@@ -86,7 +86,7 @@ function checkAndReportInvalidBaseError(e, base) {
       emoji.get('no_entry'),
       `\n${emoji.get('confounded')} This is embarrassing. `,
       `The base branch of ${base.bold} doesn't seem to exist on the remote.`,
-      `\nDid you forget to ${emoji.get('arrow_up')}  push it?`,
+      `\nDid you forget to ${emoji.get('arrow_up')} push it?`,
     ].join(''));
     return true;
   }
