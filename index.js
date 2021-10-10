@@ -38,24 +38,27 @@ function isBranchAncestor(sg, r1, r2) {
 /**
  *
  * @param {simpleGit.SimpleGit} sg
+ * @param {string} remote
  * @param {boolean} rebase
+ * @param {boolean} onto
  * @param {string} from
  * @param {string} to
  */
-async function combineBranches(sg, rebase, from, to) {
+async function combineBranches(sg, remote = DEFAULT_REMOTE, rebase, onto, from, to) {
   if (program.rebase) {
     process.stdout.write(`rebasing ${to} onto branch ${from}... `);
   } else {
     process.stdout.write(`merging ${from} into branch ${to}... `);
   }
+  const rebaseArgs = onto ? ['--onto', from, `${remote}/${from}`] : [from];
   try {
     await sg.checkout(to);
-    await (rebase ? sg.rebase([from]) : sg.merge([from]));
+    await (rebase ? sg.rebase(rebaseArgs) : sg.merge([from]));
   } catch (e) {
     if (!e.conflicts || e.conflicts.length === 0) {
       await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
       await sg.checkout(to);
-      await (rebase ? sg.rebase([from]) : sg.merge([from]));
+      await (rebase ? sg.rebase(rebaseArgs) : sg.merge([from]));
     }
   }
   console.log(emoji.get('white_check_mark'));
@@ -225,6 +228,7 @@ async function main() {
     .option('-p, --push', 'Push changes')
     .option('-l, --list', 'List branches in current train')
     .option('-r, --rebase', 'Rebase branches rather than merging them')
+    .option('-o, --onto', 'Rebase onto a new base (mainly used after the head branch is merged)')
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (including those that have already been merged into the base branch)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
@@ -258,6 +262,11 @@ async function main() {
   program.parse(process.argv);
 
   program.createPrs && checkGHKeyExists();
+
+  if (program.onto && !program.rebase) {
+    console.log('Onto can only be used if you also rebase');
+    process.exit(1);
+  }
 
   const baseBranch = program.base; // will have default value if one is not supplied
 
@@ -338,7 +347,7 @@ async function main() {
       console.log(`Branch ${b1} is an ancestor of ${b2} => nothing to do`);
       continue;
     }
-    await combineBranches(sg, program.rebase, b1, b2);
+    await combineBranches(sg, program.remote, program.rebase, program.onto, b1, b2);
     await sleep(MERGE_STEP_DELAY_MS);
   }
 

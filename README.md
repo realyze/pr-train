@@ -23,6 +23,7 @@ Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell 
 
 - `git pr-train -p` will merge branches sequentially one into another and push
 - `git pr-train -r -p -f` will rebase branches instead of merging and then push with `--force`.
+- `git pr-train -r -o -p -f` will rebase branches onto one another then push with `--force` (See example below)
 - `git pr-train -h` to print usage information
 
 ### Automatically create GitHub PRs from chained branches
@@ -67,6 +68,37 @@ If you modify a branch (or e.g. merge/rebase `fred_billing-refactor_frontend_bit
 If you wish, it also makes sure there is a "combined" branch (which contains the code of all subbranches, and you can build it and run tests on it - please see the `Chained PR workflows` section below).
 
 Now everytime you make a change to any branch in the train, run `git pr-train -p` to merge and push branches or `git pr-train -rpf` to rebase branches and force-push (if you prefer rebasing).
+
+## Rebase-Onto Example with explanation
+
+You can skip this example if you don't use the rebase workflow when merging your PRs.
+
+Taking the PR train from previous example, let's say there's one more branch at the top of the train, and it's just merged/rebased to `master`:
+- `fred_billing-setup-infrastructure` (B1 - merged to `master`)
+- `fred_billing-refactor_frontend_bits` (B2)
+- `fred_billing-refactor_backend_bits` (B3)
+- `fred_billing-refactor_tests` (B4)
+
+Using the rebase workflow, we'd like to rebase the new head PR `B2`, onto `master`. However, `B2` still contains commits from `B1` which we don't want to include as they were merged to `master` already. Also, attempting to rebase `B1`'s commits can result in unncessary merge conflicts with `master`. To exclude these commits:
+
+```bash
+git checkout fred_billing-refactor_frontend_bits
+# This will exclude all commits in fred_billing-setup-infrastructure
+# from the rebase process.
+git rebase --onto master fred_billing-setup-infrastructure
+```
+
+If you have a long train, this becomes a tedious process as you need to do the same for every single PR in the train. By passing in `-o/--onto` i.e `git pr-train -r -o -p -f`, the tool will automate the whole process. What `-o` does underneath the hood is similar to the following:
+```bash
+git checkout B[i]
+# origin/B[i - 1] points to the commit B[i - 1] originally pointed to
+# prior to being rebased. Since all of these commits were replicated to the
+# new B[i - 1], we want to exclude them while rebasing B[i] on top of B[i - 1].
+git rebase --onto B[i - 1] origin/B[i - 1]
+```
+
+As always, you still need to manually rebase the first PR in the train (`B2` in example above) onto `master`. After that, `git pr-train -ro` will take care of rebasing the rest.
+
 
 ### `.pr-train.yml` config
 
