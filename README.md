@@ -23,7 +23,7 @@ Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell 
 
 - `git pr-train -p` will merge branches sequentially one into another and push
 - `git pr-train -r -p -f` will rebase branches instead of merging and then push with `--force`.
-- `git pr-train -r -o -p -f` will rebase branches onto one another then push with `--force` (See example below)
+- `git pr-train -r --commit <commit> -p -f` will rebase branches starting from `commit` then push with `--force` (See example below)
 - `git pr-train -h` to print usage information
 
 ### Automatically create GitHub PRs from chained branches
@@ -69,7 +69,7 @@ If you wish, it also makes sure there is a "combined" branch (which contains the
 
 Now everytime you make a change to any branch in the train, run `git pr-train -p` to merge and push branches or `git pr-train -rpf` to rebase branches and force-push (if you prefer rebasing).
 
-## Rebase-Onto Example with explanation
+## Rebase With Commit Example
 
 You can skip this example if you don't use the rebase workflow when merging your PRs.
 
@@ -79,25 +79,36 @@ Taking the PR train from previous example, let's say there's one more branch at 
 - `fred_billing-refactor_backend_bits` (B3)
 - `fred_billing-refactor_tests` (B4)
 
-Using the rebase workflow, we'd like to rebase the new head PR `B2`, onto `master`. However, `B2` still contains commits from `B1` which we don't want to include as they were merged to `master` already. Also, attempting to rebase `B1`'s commits can result in unncessary merge conflicts with `master`. To exclude these commits:
+Using the rebase workflow, we'd like to rebase the new head PR `B2`, onto `master`. However, `B2` still contains commits from `B1` which we don't want to include as they were merged to `master` already. Also, attempting to rebase `B1`'s commits can result in unncessary merge conflicts with `master`
 
 ```bash
 git checkout fred_billing-refactor_frontend_bits
-# This will exclude all commits in fred_billing-setup-infrastructure
+# Exclude all commits in fred_billing-setup-infrastructure
 # from the rebase process.
 git rebase --onto master fred_billing-setup-infrastructure
 ```
 
-If you have a long train, this becomes a tedious process as you need to do the same for every single PR in the train. By passing in `-o/--onto` i.e `git pr-train -r -o -p -f`, the tool will automate the whole process. What `-o` does underneath the hood is similar to the following:
+If you have a long train, this becomes a tedious process as you need to do the same for every single PR in the train. To automate this process, we can provide the `--commit` option, passing in either a commit SHA or branch/ref, which denotes the commit (exclusive) from which we want to start the rebase. What this option does underneath the hood is roughly these commands:
+
 ```bash
 git checkout B[i]
-# origin/B[i - 1] points to the commit B[i - 1] originally pointed to
-# prior to being rebased. Since all of these commits were replicated to the
-# new B[i - 1], we want to exclude them while rebasing B[i] on top of B[i - 1].
-git rebase --onto B[i - 1] origin/B[i - 1]
+# Exclude all commits prior to and including commitID when
+# rebasing B[i] on top of B[i - 1]. Normally, this commit is what
+# B[i - 1] pointed to prior to being rebased, as these commits were
+# already replicated over to B[i - 1].
+git rebase --onto B[i - 1] ${commitID}
+# Set commitID to the commit B[i] pointed to prior to being rebased,
+# which is referenced by B[i]@{1}. This new commitID will be used
+# when rebasing the next branch B[i + 1] on top of B[i].
+commitID = B[i]@{1}
 ```
 
-As always, you still need to manually rebase the first PR in the train (`B2` in example above) onto `master`. After that, `git pr-train -ro` will take care of rebasing the rest.
+The rebase workflow after `B1` is merged to `master` is hence the following:
+1.  Manually rebase B2: `git rebase --onto master B1 B2`.
+2.  Delete/comment-out `B1` from `.pr-train.yml` as it's merged.
+3.  Rebase all subsequent branches with `git pr-train -r --commit B2@{1} -pf`.
+
+**Note**: If `commitID` is not found in the next branch to be rebased (`B[i]`), we fallback to a normal rebase i.e `git checkout B[i] && git rebase B[i - 1]`.
 
 
 ### `.pr-train.yml` config

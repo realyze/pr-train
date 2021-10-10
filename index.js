@@ -38,30 +38,58 @@ function isBranchAncestor(sg, r1, r2) {
 /**
  *
  * @param {simpleGit.SimpleGit} sg
- * @param {string} remote
  * @param {boolean} rebase
- * @param {boolean} onto
+ * @param {string} commit
  * @param {string} from
  * @param {string} to
  */
-async function combineBranches(sg, remote = DEFAULT_REMOTE, rebase, onto, from, to) {
+async function combineBranches(sg, rebase, commit, from, to) {
   if (program.rebase) {
     process.stdout.write(`rebasing ${to} onto branch ${from}... `);
   } else {
     process.stdout.write(`merging ${from} into branch ${to}... `);
   }
-  const rebaseArgs = onto ? ['--onto', from, `${remote}/${from}`] : [from];
-  try {
+  // We check that the branch to be rebased contains
+  // the given commit, which is equivalent to the commit
+  // being an ancestor of the branch.
+  if (commit && !isBranchAncestor(sg, commit, to)) {
+    console.log(`Branch ${to} does not contain commit ${commit}. Performing normal rebase...`);
+    commit = null;
+  }
+  const rebaseArgs = commit ? ['--onto', from, commit] : [from];
+
+  /**
+   *
+   * @param {simpleGit.SimpleGit} sg
+   * @param {boolean} rebase
+   * @param {string[]} rebaseArgs
+   * @param {string} to
+   */
+  const doCombineBranches = async (sg, rebase, rebaseArgs, to) => {
     await sg.checkout(to);
-    await (rebase ? sg.rebase(rebaseArgs) : sg.merge([from]));
+    let returnCommit = null;
+    if (rebase) {
+      await sg.rebase(rebaseArgs);
+      // After "to" is rebased successfully, the commit
+      // "to" previously pointed to is referenced in to@{1}.
+      // We return this commit ID so in the next loop iteration,
+      // the next branch to be rebased can start from this commit.
+      returnCommit = (await sg.raw(['rev-parse', `${to}@{1}`])).trim();
+    } else {
+      await sg.merge([from]);
+    }
+    console.log(emoji.get('white_check_mark'));
+    return returnCommit;
+  }
+
+  try {
+    return doCombineBranches(sg, rebase, rebaseArgs, to);
   } catch (e) {
     if (!e.conflicts || e.conflicts.length === 0) {
       await sleep(MERGE_STEP_DELAY_WAIT_FOR_LOCK);
-      await sg.checkout(to);
-      await (rebase ? sg.rebase(rebaseArgs) : sg.merge([from]));
+      return doCombineBranches(sg, rebase, rebaseArgs, to);
     }
   }
-  console.log(emoji.get('white_check_mark'));
 }
 
 async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
@@ -228,7 +256,7 @@ async function main() {
     .option('-p, --push', 'Push changes')
     .option('-l, --list', 'List branches in current train')
     .option('-r, --rebase', 'Rebase branches rather than merging them')
-    .option('-o, --onto', 'Rebase onto a new base (mainly used after the head branch is merged)')
+    .option('--commit <commit>', 'The commit to start the rebase from (useful for rebasing the train after head PR is merged)')
     .option('-f, --force', 'Force push to remote')
     .option('--push-merged', 'Push all branches (including those that have already been merged into the base branch)')
     .option('--remote <remote>', 'Set remote to push to. Defaults to "origin"')
@@ -263,8 +291,8 @@ async function main() {
 
   program.createPrs && checkGHKeyExists();
 
-  if (program.onto && !program.rebase) {
-    console.log('Onto can only be used if you also rebase');
+  if (program.commit && !program.rebase) {
+    console.log('Commit can only be used if you also rebase');
     process.exit(1);
   }
 
@@ -340,6 +368,7 @@ async function main() {
     return;
   }
 
+  let commit = program.commit;
   for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
     const b1 = sortedTrainBranches[i];
     const b2 = sortedTrainBranches[i + 1];
@@ -347,7 +376,7 @@ async function main() {
       console.log(`Branch ${b1} is an ancestor of ${b2} => nothing to do`);
       continue;
     }
-    await combineBranches(sg, program.remote, program.rebase, program.onto, b1, b2);
+    commit = await combineBranches(sg, program.rebase, commit, b1, b2);
     await sleep(MERGE_STEP_DELAY_MS);
   }
 
