@@ -1,5 +1,5 @@
 {
-  "name": "git-pr-train-test",
+  "name": "git-pr-train",
   "version": "2.5.1",
   "description": "A tool to help manage PR chains",
   "main": "index.js",
@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "git-pr-train-test": "./index.js"
+    "git-pr-train": "./index.js"
   },
   "author": "",
   "license": "ISC",
