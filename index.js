@@ -369,7 +369,7 @@ async function main() {
   }
 
   let commit = program.commit;
-  for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
+  for (let i = 0; i < sortedTrainBranches.length; ++i) {
     const from = i === 0 ? baseBranch : sortedTrainBranches[i - 1];
     const to = sortedTrainBranches[i];
     if (isBranchAncestor(sg, from, to)) {
