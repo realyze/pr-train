@@ -247,7 +247,7 @@ async function main() {
     process.exit(1);
   }
 
-  const defaultBase = getConfigOption(ymlConfig, 'prs.main-branch-name') || DEFAULT_BASE_BRANCH;
+  const defaultBase = String(getConfigOption(ymlConfig, 'prs.main-branch-name')) || DEFAULT_BASE_BRANCH;
   const draftByDefault = !!getConfigOption(ymlConfig, 'prs.draft-by-default');
 
   program
@@ -370,13 +370,13 @@ async function main() {
 
   let commit = program.commit;
   for (let i = 0; i < sortedTrainBranches.length - 1; ++i) {
-    const b1 = sortedTrainBranches[i];
-    const b2 = sortedTrainBranches[i + 1];
-    if (isBranchAncestor(sg, b1, b2)) {
-      console.log(`Branch ${b1} is an ancestor of ${b2} => nothing to do`);
+    const from = i === 0 ? baseBranch : sortedTrainBranches[i - 1];
+    const to = sortedTrainBranches[i];
+    if (isBranchAncestor(sg, from, to)) {
+      console.log(`Branch ${from} is an ancestor of ${to} => nothing to do`);
       continue;
     }
-    commit = await combineBranches(sg, program.rebase, commit, b1, b2);
+    commit = await combineBranches(sg, program.rebase, commit, from, to);
     await sleep(MERGE_STEP_DELAY_MS);
   }
 

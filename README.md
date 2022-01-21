@@ -79,16 +79,16 @@ Taking the PR train from previous example, let's say there's one more branch at 
 - `fred_billing-refactor_backend_bits` (B3)
 - `fred_billing-refactor_tests` (B4)
 
-Using the rebase workflow, we'd like to rebase the new head PR `B2`, onto `master`. However, `B2` still contains commits from `B1` which we don't want to include as they were merged to `master` already. Also, attempting to rebase `B1`'s commits can result in unncessary merge conflicts with `master`
+Using the rebase workflow, we'd like to rebase the new head PR `B2`, onto `master`, so the PR diff only displays changes from B2. However, `B2` still contains commits from `B1` which we don't want to include in the rebase process, as they were merged to `master` already. Also, attempting to rebase `B1`'s commits again can result in merge conflicts with `master`. What we would likely want to do to exclude `B1`'s commits is the following:
 
 ```bash
 git checkout fred_billing-refactor_frontend_bits
 # Exclude all commits in fred_billing-setup-infrastructure
-# from the rebase process.
+# from the rebase process, since these changes were in master already.
 git rebase --onto master fred_billing-setup-infrastructure
 ```
 
-If you have a long train, this becomes a tedious process as you need to do the same for every single PR in the train. To automate this process, we can provide the `--commit` option, passing in either a commit SHA or branch/ref, which denotes the commit (exclusive) from which we want to start the rebase. What this option does underneath the hood is roughly these commands:
+If you have a long train, this becomes a tedious process as you need to do the same for every single PR in the train. To automate this, you can provide the `--commit` option, passing in either a commit SHA or a branch/ref name, which denotes the commit from which we want to start the rebase (exclusively i.e the rebase will take effect on whatever commit is next). What this option does behind the scenes is roughly these commands:
 
 ```bash
 git checkout B[i]
@@ -98,15 +98,17 @@ git checkout B[i]
 # already replicated over to B[i - 1].
 git rebase --onto B[i - 1] ${commitID}
 # Set commitID to the commit B[i] pointed to prior to being rebased,
-# which is referenced by B[i]@{1}. This new commitID will be used
+# which is referenced by B[i]@{1}. This new commitID will then be used
 # when rebasing the next branch B[i + 1] on top of B[i].
 commitID = B[i]@{1}
 ```
 
-The rebase workflow after `B1` is merged to `master` is hence the following:
-1.  Manually rebase B2: `git rebase --onto master B1 B2`.
-2.  Delete/comment-out `B1` from `.pr-train.yml` as it's merged.
-3.  Rebase all subsequent branches with `git pr-train -r --commit B2@{1} -pf`.
+The first branch in your train i.e `B2`, would be rebased against the base branch. This can be configured in the yml config `main-branch-name` for convenience and can be overriden on the command line by using `-b/--base` option.
+
+With `--commit` option, you can rebase the whole train after `B1` is merged to `master` in one single command (make sure you commented out `B1` from the pr train yml config first):
+```bash
+git pr-train -r --commit B1
+```
 
 **Note**: If `commitID` is not found in the next branch to be rebased (`B[i]`), we fallback to a normal rebase i.e `git checkout B[i] && git rebase B[i - 1]`.
 
