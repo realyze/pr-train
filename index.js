@@ -243,8 +243,10 @@ async function main() {
     console.log('  Switching branches:');
     console.log('');
     console.log(
-      '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5). ' +
-        'If <index> is "combined", it will switch to the combined branch.'
+      '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5).\n' +
+      '    $ `git pr-train [+-]<index>` will switch to branch with index bigger or smaller by <index>\n' +
+      '       relative to the current one branch index.\n' +
+      '    If <index> is "combined", it will switch to the combined branch.\n'
     );
     console.log('');
     console.log('  Creating GitHub PRs:');
