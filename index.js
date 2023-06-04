@@ -116,7 +116,7 @@ async function getBranchesConfigInCurrentTrain(sg, config) {
     return null;
   }
   const key = Object.keys(trains).find(trainKey => {
-    const branches = trains[trainKey];
+    const branches = trains[trainKey] ?? [];
     const branchNames = branches.map(b => getBranchName(b));
     return branchNames.indexOf(currentBranch) >= 0;
   });
