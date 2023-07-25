@@ -42,7 +42,8 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
     const prTitle = branchToPrDict[branch].title.trim();
     const prNumber = `#${branchToPrDict[branch].pr}`;
     const prInfo = `${combinedInfo}${prTitle}`.trim();
-    tableData.push([maybeHandRight, prNumber, prInfo]);
+    const prInfoHtml = `<ul><li>${prInfo}</li></ul>`
+    tableData.push([maybeHandRight, prNumber, prInfoHtml]);
   });
   contents += table(tableData, { stringLength: width }) + '\n';
   contents += '\n</pr-train-toc>'
