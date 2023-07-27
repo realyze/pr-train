@@ -9,7 +9,6 @@ const fs = require('fs');
 const get = require('lodash/get');
 const colors = require('colors');
 const emoji = require('node-emoji');
-const table = require('markdown-table');
 const width = require('string-width');
 
 /**
@@ -35,15 +34,18 @@ async function constructPrMsg(sg, branch) {
  */
 function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch) {
   let contents = '<pr-train-toc>\n\n';
-  let tableData = [['', 'PR', 'Description']];
+  let prList = [];
   Object.keys(branchToPrDict).forEach((branch) => {
-    const maybeHandRight = branch === currentBranch ? '👉 ' : ' ';
+    const maybeHandRight = branch === currentBranch ? ' 👈' : ' ';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
     const prNumber = `#${branchToPrDict[branch].pr}`;
-    const prInfoHtml = `<ul><li>${combinedInfo}${prNumber}</li></ul>`
-    tableData.push([maybeHandRight, prNumber, prInfoHtml]);
+    const prInfoHtml = `<li>${combinedInfo}${prNumber}${maybeHandRight}</li>`
+    prList.push(prInfoHtml);
   });
-  contents += table(tableData, { stringLength: width }) + '\n';
+  if (prList.length > 0) {
+    contents += '### 🚂 PR Train \n';
+    contents += '<ol>' + prList.join('') +'</ol>\n';
+  }
   contents += '\n</pr-train-toc>'
   return contents;
 }
