@@ -39,10 +39,8 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
   Object.keys(branchToPrDict).forEach((branch) => {
     const maybeHandRight = branch === currentBranch ? '👉 ' : ' ';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
-    const prTitle = branchToPrDict[branch].title.trim();
     const prNumber = `#${branchToPrDict[branch].pr}`;
-    const prInfo = `${combinedInfo}${prTitle}`.trim();
-    const prInfoHtml = `<ul><li>${prInfo}</li></ul>`
+    const prInfoHtml = `<ul><li>${combinedInfo}${prNumber}</li></ul>`
     tableData.push([maybeHandRight, prNumber, prInfoHtml]);
   });
   contents += table(tableData, { stringLength: width }) + '\n';

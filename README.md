@@ -155,3 +155,14 @@ e.g. `git pr-train -p -c -b feat/my-feature-base`
 
 To have the command output include a link to the PR that was created or updated,
 simply add `print-urls: true` to the `prs` section of the config file.
+
+
+## Contributing
+
+You can check out this repo, perform changes and install the module globally by running:
+
+```
+npm install  -g
+```
+
+Then follow the instructions under [Usage](#Usage) in order to test.
