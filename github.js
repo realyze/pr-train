@@ -39,12 +39,12 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
     const maybeHandRight = branch === currentBranch ? ' 👈' : ' ';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
     const prNumber = `#${branchToPrDict[branch].pr}`;
-    const prInfoHtml = `<li>${combinedInfo}${prNumber}${maybeHandRight}</li>`
+    const prInfoHtml = `1. ${prNumber}${combinedInfo}${maybeHandRight}`
     prList.push(prInfoHtml);
   });
   if (prList.length > 0) {
     contents += '### 🚂 PR Train \n';
-    contents += '<ol>' + prList.join('') +'</ol>\n';
+    contents += prList.join('\n');
   }
   contents += '\n</pr-train-toc>'
   return contents;
