@@ -39,7 +39,7 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
     const maybeHandRight = branch === currentBranch ? ' 👈' : ' ';
     const combinedInfo = branch === combinedBranch ? ' **[combined branch]** ' : ' ';
     const prNumber = `#${branchToPrDict[branch].pr}`;
-    const prInfoHtml = `1. ${prNumber}${combinedInfo}${maybeHandRight}`
+    const prInfoHtml = `1. ${prNumber}${combinedInfo}${maybeHandRight}`;
     prList.push(prInfoHtml);
   });
   contents += '### 🚂 PR Train \n';
