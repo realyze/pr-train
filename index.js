@@ -64,7 +64,7 @@ async function combineBranches(sg, rebase, from, to) {
 async function pushBranches(sg, branches, forcePush, remote = DEFAULT_REMOTE) {
   console.log(`Pushing changes to remote ${remote}...`);
   // Ugh... `raw` doesn't allow empty strings or `undefined`s, so let's filter any "empty" args.
-  const args = ['push', forcePush ? '--force' : undefined, remote].concat(branches).filter(Boolean);
+  const args = ['push', '--set-upstream', forcePush ? '--force' : undefined, remote].concat(branches).filter(Boolean);
   await sg.raw(args);
   console.log('All changes pushed ' + emoji.get('white_check_mark'));
 }
