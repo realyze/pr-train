@@ -86,7 +86,7 @@ async function getConfigPath(sg) {
 /**
  * @typedef {string | Object.<string, { combined: boolean, initSha?: string }>} BranchCfg
  * @typedef {Object.<string, Array.<string | BranchCfg>>} TrainCfg
- * @typedef {{ prs?: Object, trains: Array.<TrainCfg>}} YamlCfg
+ * @typedef {{ prs?: Object, trains: TrainCfg}} YamlCfg
  */
 
 /**
@@ -106,21 +106,17 @@ function getBranchName(branchCfg) {
 }
 
 /**
- * @return {Promise.<Array.<BranchCfg>>}
+ * @return {Array.<BranchCfg>}
  */
-async function getBranchesConfigInCurrentTrain(sg, config) {
-  const branches = await sg.branchLocal();
-  const currentBranch = branches.current;
+function getBranchesConfigInCurrentTrain(currentBranch, config) {
   const { trains } = config;
   if (!trains) {
     return null;
   }
-  const key = Object.keys(trains).find(trainKey => {
-    const branches = trains[trainKey];
-    const branchNames = branches.map(b => getBranchName(b));
+  return Object.values(trains).find(branchesConfig => {
+    const branchNames = branchesConfig.map(b => getBranchName(b));
     return branchNames.indexOf(currentBranch) >= 0;
   });
-  return key && trains[key];
 }
 
 /**
@@ -222,6 +218,7 @@ async function main() {
   program
     .version(package.version)
     .option('--init', 'Creates a .pr-train.yml file with an example configuration')
+    .option('-t, --train <train>', 'Use named train instead of currently checked out branch')
     .option('-p, --push', 'Push changes')
     .option('-l, --list', 'List branches in current train')
     .option('-r, --rebase', 'Rebase branches rather than merging them')
@@ -264,10 +261,19 @@ async function main() {
   const draft = program.draft != null ? program.draft : draftByDefault;
 
   const { current: currentBranch, all: allBranches } = await sg.branchLocal();
-  const trainCfg = await getBranchesConfigInCurrentTrain(sg, ymlConfig);
-  if (!trainCfg) {
-    console.log(`Current branch ${currentBranch} is not a train branch.`);
-    process.exit(1);
+  let trainCfg;
+  if (program.train) {
+    trainCfg = ymlConfig.trains[program.train];
+    if (!trainCfg) {
+      console.log(`Could not find specified train named "${program.train}" in config.`);
+      process.exit(1);
+    }
+  } else {
+    trainCfg = getBranchesConfigInCurrentTrain(currentBranch, ymlConfig);
+    if (!trainCfg) {
+      console.log(`Current branch ${currentBranch} is not a train branch.`);
+      process.exit(1);
+    }  
   }
   const sortedTrainBranches = getBranchesInCurrentTrain(trainCfg);
   const combinedTrainBranch = getCombinedBranch(trainCfg);
