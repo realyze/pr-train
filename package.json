@@ -32,7 +32,7 @@
     "progress": "^2.0.0",
     "promptly": "^3.0.3",
     "shelljs": "^0.8.3",
-    "simple-git": "^1.102.0",
+    "simple-git": "^3.16.0",
     "string-width": "^4.2.0"
   },
   "devDependencies": {
