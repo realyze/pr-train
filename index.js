@@ -148,14 +148,19 @@ function getCombinedBranch(branchConfig) {
   return branchName;
 }
 
-async function handleSwitchToBranchCommand(sg, sortedBranches, combinedBranch) {
+async function handleSwitchToBranchCommand(sg, currentBranch, sortedBranches, combinedBranch) {
   const switchToBranchIndex = program.args[0];
   if (typeof switchToBranchIndex === 'undefined') {
     return;
   }
   let targetBranch;
+  let currentBranchIndex = sortedBranches.indexOf(currentBranch)
   if (switchToBranchIndex === 'combined') {
     targetBranch = combinedBranch;
+  } else if (switchToBranchIndex.startsWith("+")) {
+      targetBranch = sortedBranches[currentBranchIndex + parseInt(switchToBranchIndex.slice(1))]
+  } else if (switchToBranchIndex.startsWith("-")) {
+      targetBranch = sortedBranches[currentBranchIndex - parseInt(switchToBranchIndex.slice(1))]
   } else {
     targetBranch = sortedBranches[switchToBranchIndex];
   }
@@ -238,8 +243,10 @@ async function main() {
     console.log('  Switching branches:');
     console.log('');
     console.log(
-      '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5). ' +
-        'If <index> is "combined", it will switch to the combined branch.'
+      '    $ `git pr-train <index>` will switch to branch with index <index> (e.g. 0 or 5).\n' +
+      '    $ `git pr-train [+-]<index>` will switch to branch with index bigger or smaller by <index>\n' +
+      '       relative to the current one branch index.\n' +
+      '    If <index> is "combined", it will switch to the combined branch.\n'
     );
     console.log('');
     console.log('  Creating GitHub PRs:');
@@ -277,7 +284,7 @@ async function main() {
     await sg.raw(['branch', combinedTrainBranch, lastBranchBeforeCombined]);
   }
 
-  await handleSwitchToBranchCommand(sg, sortedTrainBranches, combinedTrainBranch);
+  await handleSwitchToBranchCommand(sg, currentBranch, sortedTrainBranches, combinedTrainBranch);
 
   console.log(`I've found these partial branches:`);
   const branchesToPrint = sortedTrainBranches.map((b, idx) => {
