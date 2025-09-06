@@ -1,6 +1,6 @@
 {
   "name": "git-pr-train",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "A tool to help manage PR chains",
   "main": "index.js",
   "scripts": {
@@ -31,7 +31,7 @@
     "octonode": "^0.9.3",
     "progress": "^2.0.0",
     "promptly": "^3.0.3",
-    "shelljs": "^0.8.3",
+    "shelljs": "^0.8.4",
     "simple-git": "^1.102.0",
     "string-width": "^4.2.0"
   },
