@@ -277,8 +277,5 @@ async function ensurePrsExist({
 
 module.exports = {
   ensurePrsExist,
-  getGHToken,
-  readGHTokenFromConfig,
-  readGHTokenFromCLI,
   checkGHKeyExists,
 };
