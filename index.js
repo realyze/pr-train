@@ -7,7 +7,7 @@ const program = require('commander');
 const emoji = require('node-emoji');
 const fs = require('fs');
 const yaml = require('js-yaml');
-const { ensurePrsExist, readGHKey, checkGHKeyExists } = require('./github');
+const { ensurePrsExist, checkGHKeyExists } = require('./github');
 const colors = require('colors');
 const {
   DEFAULT_REMOTE,

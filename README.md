@@ -29,9 +29,13 @@ Now whenever you have a chain of branches, list them in `.pr-train.yml` to tell 
 
 #### Setup
 
-Create a GitHub personal access token in [GitHub Settings > Personal access tokens > Fine-grained tokens](https://github.com/settings/personal-access-tokens). Allow access to repositories you wish to push PR trains to, and set the permissions to `Contents: Read-only` and `Pull requests: Read and write`. Once generated, create a `${HOME}/.pr-train` file containing the generated token and nothing else.
+If you have the [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh auth login`), no additional setup is needed — pr-train will automatically use your `gh` auth token.
+
+Alternatively, you can create a `${HOME}/.pr-train` file containing a GitHub personal access token. Generate one in [GitHub Settings > Personal access tokens > Fine-grained tokens](https://github.com/settings/personal-access-tokens). Allow access to repositories you wish to push PR trains to, and set the permissions to `Contents: Read-only` and `Pull requests: Read and write`.
 
 "Classic" GitHub tokens can be used instead of fine-grained tokens by providing the `repo` scope.
+
+If both methods are available, the `~/.pr-train` file takes precedence.
 
 #### Usage
 

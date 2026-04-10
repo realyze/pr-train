@@ -6,6 +6,7 @@ const {
   DEFAULT_BASE_BRANCH
 } = require('./consts');
 const fs = require('fs');
+const shell = require('shelljs');
 const get = require('lodash/get');
 const colors = require('colors');
 const emoji = require('node-emoji');
@@ -48,20 +49,51 @@ function constructTrainNavigation(branchToPrDict, currentBranch, combinedBranch)
   return contents;
 }
 
+let cachedToken = null;
+
 function checkGHKeyExists() {
   try {
-    readGHKey()
+    getGHToken();
   } catch (e) {
-    console.log(`"$HOME/.pr-train" not found. Please make sure file exists and contains your GitHub API key.`.red);
+    console.log(
+      [
+        'GitHub token not found. Set up authentication using one of these methods:\n',
+        '  1. If you have the GitHub CLI: run "gh auth login"',
+        '  2. Create a ~/.pr-train file containing your GitHub API token',
+        '     (see README for token scope requirements)',
+      ].join('\n').red
+    );
     process.exit(4);
   }
 }
 
-function readGHKey() {
+function readGHTokenFromConfig() {
   return fs
     .readFileSync(`${process.env.HOME}/.pr-train`, 'UTF-8')
     .toString()
     .trim();
+}
+
+function readGHTokenFromCLI() {
+  const result = shell.exec('gh auth token', { silent: true });
+  if (result.code !== 0) {
+    throw new Error('Failed to get token from gh CLI');
+  }
+  return result.stdout.trim();
+}
+
+function getGHToken() {
+  if (cachedToken) {
+    return cachedToken;
+  }
+  try {
+    cachedToken = readGHTokenFromConfig();
+    return cachedToken;
+  } catch (e) {
+    // Fall through to gh CLI
+  }
+  cachedToken = readGHTokenFromCLI();
+  return cachedToken;
 }
 
 /**
@@ -112,7 +144,7 @@ async function ensurePrsExist({
   printLinks = false
 }) {
   //const allBranches = combinedBranch ? sortedBranches.concat(combinedBranch) : sortedBranches;
-  const octoClient = octo.client(readGHKey());
+  const octoClient = octo.client(getGHToken());
   // TODO: take remote name from `-r` value.
   const remoteUrl = await sg.raw(['config', '--get', `remote.${remote}.url`]);
   if (!remoteUrl) {
@@ -245,6 +277,5 @@ async function ensurePrsExist({
 
 module.exports = {
   ensurePrsExist,
-  readGHKey,
   checkGHKeyExists,
 };
